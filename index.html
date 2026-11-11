@@ -456,17 +456,17 @@
                     { id: 'A', name: "Toko A", details: ["Harga Awal: Rp200.000", "Promo: Diskon 50% + 20%"] },
                     { id: 'B', name: "Toko B", details: ["Harga Awal: Rp200.000", "Promo: Diskon 65% Langsung"] }
                 ],
-                calcInputs: [
-                    { key: 'priceA', label: 'Harga Akhir Toko A (Rp)' },
-                    { key: 'priceB', label: 'Harga Akhir Toko B (Rp)' }
+                // Generates dynamic input based on selected option
+                getCalcInputs: (selectedOpt) => [
+                    { key: `price${selectedOpt}`, label: `Harga Akhir Pilihanmu (${selectedOpt === 'A' ? 'Toko A' : 'Toko B'}) (Rp)` }
                 ],
-                calcLogic: (inputs) => {
+                calcLogic: (inputs, selectedOpt) => {
                     const priceA = 200000 * (1 - 0.50) * (1 - 0.20); // 80.000
                     const priceB = 200000 * (1 - 0.65);             // 70.000
-                    const userA = parseNumericInput(inputs.priceA);
-                    const userB = parseNumericInput(inputs.priceB);
+                    const targetPrice = selectedOpt === 'A' ? priceA : priceB;
+                    const userVal = parseNumericInput(inputs[`price${selectedOpt}`]);
 
-                    const isMathCorrect = (Math.abs(userA - priceA) <= 100) && (Math.abs(userB - priceB) <= 100);
+                    const isMathCorrect = Math.abs(userVal - targetPrice) <= 100;
 
                     return {
                         cheaper: 'B',
@@ -497,17 +497,16 @@
                     { id: 'A', name: "Toko A", details: ["Harga Awal: Rp250.000", "Promo: Diskon 40%"] },
                     { id: 'B', name: "Toko B", details: ["Harga Awal: Rp180.000", "Promo: Diskon 20%"] }
                 ],
-                calcInputs: [
-                    { key: 'priceA', label: 'Harga Akhir Toko A (Rp)' },
-                    { key: 'priceB', label: 'Harga Akhir Toko B (Rp)' }
+                getCalcInputs: (selectedOpt) => [
+                    { key: `price${selectedOpt}`, label: `Harga Akhir Pilihanmu (${selectedOpt === 'A' ? 'Toko A' : 'Toko B'}) (Rp)` }
                 ],
-                calcLogic: (inputs) => {
+                calcLogic: (inputs, selectedOpt) => {
                     const priceA = 250000 * (1 - 0.40); // 150.000
                     const priceB = 180000 * (1 - 0.20); // 144.000
-                    const userA = parseNumericInput(inputs.priceA);
-                    const userB = parseNumericInput(inputs.priceB);
+                    const targetPrice = selectedOpt === 'A' ? priceA : priceB;
+                    const userVal = parseNumericInput(inputs[`price${selectedOpt}`]);
 
-                    const isMathCorrect = (Math.abs(userA - priceA) <= 100) && (Math.abs(userB - priceB) <= 100);
+                    const isMathCorrect = Math.abs(userVal - targetPrice) <= 100;
 
                     return {
                         cheaper: 'B',
@@ -537,17 +536,16 @@
                     { id: 'A', name: "Toko A", details: ["Harga Awal: Rp100.000", "Promo: Diskon 50% (Maks Rp25.000)"] },
                     { id: 'B', name: "Toko B", details: ["Harga Awal: Rp100.000", "Promo: Diskon 30% Tanpa Batas"] }
                 ],
-                calcInputs: [
-                    { key: 'priceA', label: 'Harga Akhir Toko A (Rp)' },
-                    { key: 'priceB', label: 'Harga Akhir Toko B (Rp)' }
+                getCalcInputs: (selectedOpt) => [
+                    { key: `price${selectedOpt}`, label: `Harga Akhir Pilihanmu (${selectedOpt === 'A' ? 'Toko A' : 'Toko B'}) (Rp)` }
                 ],
-                calcLogic: (inputs) => {
+                calcLogic: (inputs, selectedOpt) => {
                     const priceA = 100000 - Math.min(100000 * 0.50, 25000); // 75.000
                     const priceB = 100000 * (1 - 0.30);                     // 70.000
-                    const userA = parseNumericInput(inputs.priceA);
-                    const userB = parseNumericInput(inputs.priceB);
+                    const targetPrice = selectedOpt === 'A' ? priceA : priceB;
+                    const userVal = parseNumericInput(inputs[`price${selectedOpt}`]);
 
-                    const isMathCorrect = (Math.abs(userA - priceA) <= 100) && (Math.abs(userB - priceB) <= 100);
+                    const isMathCorrect = Math.abs(userVal - targetPrice) <= 100;
 
                     return {
                         cheaper: 'B',
@@ -578,7 +576,7 @@
                     { id: 'A', name: "Voucher A Lebih Hemat", details: ["Fokus pada skenario belanja Rp150.000"] },
                     { id: 'B', name: "Voucher B Lebih Hemat", details: ["Fokus pada skenario belanja Rp150.000"] }
                 ],
-                calcInputs: [
+                getCalcInputs: () => [
                     { key: 'scen100A', label: 'Belanja Rp100.000 - Bayar Pakai Voucher A (Rp):' },
                     { key: 'scen100B', label: 'Belanja Rp100.000 - Bayar Pakai Voucher B (Rp):' },
                     { key: 'scen150A', label: 'Belanja Rp150.000 - Bayar Pakai Voucher A (Rp):' },
@@ -639,18 +637,19 @@
                     { id: 'A', name: "Opsi A (E-Wallet)", details: ["Biaya Bersih setelah memperhitungkan Cashback Koin & Gratis Ongkir"] },
                     { id: 'B', name: "Opsi B (Kartu/Paylater)", details: ["Total Bayar setelah Diskon 15% + Biaya Admin Rp5.000 + Ongkir"] }
                 ],
-                calcInputs: [
-                    { key: 'priceA', label: 'Beban Biaya Bersih Opsi A (Rp)' },
-                    { key: 'priceB', label: 'Total Bayar Opsi B (Rp)' }
+                getCalcInputs: (selectedOpt) => [
+                    { 
+                        key: `price${selectedOpt}`, 
+                        label: selectedOpt === 'A' ? 'Beban Biaya Bersih Opsi A (Rp)' : 'Total Bayar Opsi B (Rp)' 
+                    }
                 ],
-                calcLogic: (inputs) => {
+                calcLogic: (inputs, selectedOpt) => {
                     const priceA = 135000;
                     const priceB = 142500;
+                    const targetPrice = selectedOpt === 'A' ? priceA : priceB;
+                    const userVal = parseNumericInput(inputs[`price${selectedOpt}`]);
 
-                    const userA = parseNumericInput(inputs.priceA);
-                    const userB = parseNumericInput(inputs.priceB);
-
-                    const isMathCorrect = (Math.abs(userA - priceA) <= 100) && (Math.abs(userB - priceB) <= 100);
+                    const isMathCorrect = Math.abs(userVal - targetPrice) <= 100;
 
                     return {
                         cheaper: 'A',
@@ -684,37 +683,28 @@
                     { id: 'C', name: "Opsi C (KK ABC)", details: ["Diskon Rp200.000 + Admin 3%"] },
                     { id: 'D', name: "Opsi D (KK XYZ Cicilan 12bln)", details: ["Diskon Rp500rb + Bunga Flat 1%/bln + Admin 3%"] }
                 ],
-                calcInputs: [
-                    { key: 'priceA', label: 'Total Opsi A - Tunai (Rp)' },
-                    { key: 'priceB', label: 'Total Opsi B - Debit (Rp)' },
-                    { key: 'priceC', label: 'Total Opsi C - KK ABC (Rp)' },
-                    { key: 'priceD', label: 'Total Opsi D - KK XYZ (Rp)' }
+                getCalcInputs: (selectedOpt) => [
+                    { key: `price${selectedOpt}`, label: `Total Pengeluaran Pilihanmu (Opsi ${selectedOpt}) (Rp)` }
                 ],
-                calcLogic: (inputs) => {
-                    const priceA = 5880000;
-                    const priceB = 5900000;
-                    const priceC = 5974000;
-                    const priceD = 6344800;
+                calcLogic: (inputs, selectedOpt) => {
+                    const prices = {
+                        A: 5880000,
+                        B: 5900000,
+                        C: 5974000,
+                        D: 6344800
+                    };
+                    const targetPrice = prices[selectedOpt];
+                    const userVal = parseNumericInput(inputs[`price${selectedOpt}`]);
 
-                    const uA = parseNumericInput(inputs.priceA);
-                    const uB = parseNumericInput(inputs.priceB);
-                    const uC = parseNumericInput(inputs.priceC);
-                    const uD = parseNumericInput(inputs.priceD);
-
-                    const isMathCorrect = (
-                        Math.abs(uA - priceA) <= 100 &&
-                        Math.abs(uB - priceB) <= 100 &&
-                        Math.abs(uC - priceC) <= 100 &&
-                        Math.abs(uD - priceD) <= 100
-                    );
+                    const isMathCorrect = Math.abs(userVal - targetPrice) <= 100;
 
                     return {
                         cheaper: 'A',
                         isMathCorrect: isMathCorrect,
-                        priceA: priceA,
-                        priceB: priceB,
-                        priceC: priceC,
-                        priceD: priceD,
+                        priceA: prices.A,
+                        priceB: prices.B,
+                        priceC: prices.C,
+                        priceD: prices.D,
                         breakdown: `
                             • <b>Opsi A (Tunai):</b><br>
                               Diskon 2% × Rp6.000.000 = Rp120.000<br>
@@ -849,21 +839,14 @@
                 </div>
             `).join('');
 
-            // Reset & Disable Tahap 2 Form
+            // Reset & Disable Tahap 2 Form Box
             const tahap2Box = document.getElementById('section-tahap2');
             tahap2Box.classList.add('opacity-60', 'pointer-events-none');
             
-            // Inject Dynamic Inputs into Tahap 2
-            const inputsContainer = document.getElementById('calc-inputs-container');
-            inputsContainer.innerHTML = caseData.calcInputs.map(inp => `
-                <div>
-                    <label class="block text-xs text-slate-300 mb-1">${inp.label}</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-2.5 text-slate-400 font-medium">Rp</span>
-                        <input type="text" inputmode="numeric" id="input-${inp.key}" placeholder="Contoh: 80.000 atau 80000" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-white focus:outline-none focus:border-amber-500 font-mono text-sm">
-                    </div>
-                </div>
-            `).join('');
+            // Clear Inputs Container initially (will be dynamically generated when option is locked)
+            document.getElementById('calc-inputs-container').innerHTML = `
+                <p class="text-xs text-slate-400 italic">Pilih dan kunci opsi pada Tahap 1 untuk membuka kolom perhitungan harga akhir.</p>
+            `;
 
             // Hide previous result box
             document.getElementById('result-box').classList.add('hidden');
@@ -925,6 +908,20 @@
             document.getElementById('lock-status-badge').innerText = "Tebakan terkunci! Sekarang selesaikan Tahap 2.";
             document.getElementById('lock-status-badge').className = "text-xs text-emerald-400 font-semibold";
 
+            // Dynamically inject calculation inputs tailored to the locked choice
+            const inputsContainer = document.getElementById('calc-inputs-container');
+            const targetInputs = currentCase.getCalcInputs(selectedOption);
+
+            inputsContainer.innerHTML = targetInputs.map(inp => `
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1 font-medium">${inp.label}</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-slate-400 font-medium">Rp</span>
+                        <input type="text" inputmode="numeric" id="input-${inp.key}" placeholder="Contoh: 80.000 atau 80000" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-white focus:outline-none focus:border-amber-500 font-mono text-sm">
+                    </div>
+                </div>
+            `).join('');
+
             // Unlock Tahap 2 Section
             const tahap2Box = document.getElementById('section-tahap2');
             tahap2Box.classList.remove('opacity-60', 'pointer-events-none');
@@ -943,12 +940,13 @@
          */
         function submitCaseAnswer() {
             const currentCase = casesData[currentCaseIndex];
+            const targetInputs = currentCase.getCalcInputs(selectedOption);
             
             // Gather input values from Tahap 2
             const inputsData = {};
             let allInputsFilled = true;
 
-            currentCase.calcInputs.forEach(inp => {
+            targetInputs.forEach(inp => {
                 const rawVal = document.getElementById(`input-${inp.key}`).value;
                 if (!rawVal.trim()) allInputsFilled = false;
                 inputsData[inp.key] = rawVal;
@@ -959,8 +957,8 @@
                 return;
             }
 
-            // Run evaluation
-            const evalResult = currentCase.calcLogic(inputsData);
+            // Run evaluation using selectedOption
+            const evalResult = currentCase.calcLogic(inputsData, selectedOption);
             const isGuessCorrect = (selectedOption === evalResult.cheaper);
             const isMathCorrect = evalResult.isMathCorrect;
 
@@ -995,7 +993,7 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-base text-emerald-400">Analisis Detektif Sempurna! (+20 Pts)</h3>
-                        <p class="text-xs text-slate-300">Tebakan pilihan terhemat benar dan seluruh hasil hitunganmu akurat.</p>
+                        <p class="text-xs text-slate-300">Tebakan pilihan terhemat benar dan hasil hitunganmu untuk Opsi ${selectedOption} akurat.</p>
                     </div>
                 `;
             } else if (earnedPoints > 0) {
@@ -1195,14 +1193,14 @@ REFLEKSI SISWA:
         function renderGuruKeyAnswers() {
             const container = document.getElementById('guru-answers-list');
             container.innerHTML = casesData.map((c, i) => {
-                // Call calcLogic with dummy full inputs to extract accurate solution
+                // Call calcLogic with dummy inputs to extract accurate solution
                 const dummyInputs = {
-                    priceA: '0', priceB: '0', priceC: '0', priceD: '0',
+                    priceA: '80000', priceB: '70000', priceC: '5974000', priceD: '6344800',
                     scen100A: '100000', scen100B: '75000',
                     scen150A: '100000', scen150B: '112500',
                     scen250A: '200000', scen250B: '187500'
                 };
-                const sol = c.calcLogic(dummyInputs);
+                const sol = c.calcLogic(dummyInputs, 'A');
                 
                 return `
                     <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg space-y-1">
