@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diskon Detektif - Pembongkar Promo Menyesatkan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        detective: {
+                            dark: '#1E293B',
+                            brown: '#78350F',
+                            accent: '#F59E0B',
+                            light: '#FEF3C7',
+                            card: '#FFFBEB',
+                            badge: '#B45309'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A;
+            color: #F8FAFC;
+        }
+
+        .heading-font {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        /* Glassmorphism & Detective Theme Cards */
+        .detective-card {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 2px solid #334155;
+            border-radius: 1.25rem;
+        }
+
+        .promo-card {
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+        }
+
+        .promo-card.selected {
+            border-color: #F59E0B;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3);
+        }
+
+        .promo-card.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        /* Animations */
+        @keyframes popSuccess {
+            0% { transform: scale(0.95); opacity: 0; }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .animate-pop {
+            animation: popSuccess 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        input[type=range] {
+            accent-color: #F59E0B;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-slate-900">
+
+    <!-- HEADER / NAVIGATION BAR -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-slate-900 font-bold text-xl shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-user-secret"></i>
+                </div>
+                <div>
+                    <h1 class="heading-font text-lg font-bold text-amber-400 leading-tight">Diskon Detektif</h1>
+                    <p class="text-xs text-slate-400">Kelas X SMA - Pembongkar Promo</p>
+                </div>
+            </div>
+            
+            <!-- Global Score & Guru Mode Badge -->
+            <div class="flex items-center space-x-3">
+                <div id="top-score-badge" class="hidden flex items-center bg-slate-800 border border-amber-500/30 px-3 py-1.5 rounded-full text-xs font-semibold text-amber-300">
+                    <i class="fa-solid fa-star text-amber-400 mr-1.5"></i>
+                    <span id="global-score">0</span> / 120 Pts
+                </div>
+                <button onclick="openGuruModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-key text-amber-400"></i>
+                    <span>Mode Guru</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-3xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center">
+
+        <!-- ==================== LAYAR 0: WELCOME & START ==================== -->
+        <section id="screen-welcome" class="detective-card p-6 md:p-8 text-center shadow-2xl">
+            <div class="w-20 h-20 bg-amber-500/10 border-2 border-amber-500 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
+                <i class="fa-solid fa-magnifying-glass font-bold"></i>
+            </div>
+            
+            <h2 class="heading-font text-2xl md:text-3xl text-amber-400 font-bold mb-2">
+                Selamat Datang, Detektif Belanja!
+            </h2>
+            <p class="text-slate-300 text-sm md:text-base leading-relaxed mb-6">
+                Banyak diskon di toko fisik maupun online terlihat menggiurkan, padahal menyembunyikan jebakan! Tugasmu adalah membongkar kecurangan promo dan menemukan penawaran terbaik.
+            </p>
+
+            <!-- Identitas Siswa -->
+            <div class="bg-slate-900/70 border border-slate-700 p-4 rounded-xl mb-6 text-left space-y-3">
+                <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-id-card"></i> Identitas Detektif:
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Nama Lengkap:</label>
+                        <input type="text" id="student-name" placeholder="Masukkan namamu..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Kelas:</label>
+                        <input type="text" id="student-class" placeholder="Contoh: X IPA 1" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pertanyaan Pemantik -->
+            <div class="bg-slate-800/80 border border-amber-500/30 p-5 rounded-xl mb-6 text-left">
+                <div class="flex items-start gap-3 mb-3">
+                    <span class="bg-amber-500 text-slate-900 font-bold px-2.5 py-0.5 rounded-md text-xs uppercase tracking-wide">Studi Kasus 0</span>
+                    <h3 class="text-sm font-semibold text-amber-300">Pertanyaan Pemantik (Pra-Vote):</h3>
+                </div>
+                <p class="text-base font-medium text-white mb-4">
+                    "Kamu melihat sepatu impianmu diskon 50%! Tapi, sepatu itu sebenarnya <span class="text-amber-400 underline decoration-wavy">TIDAK ADA</span> dalam daftar kebutuhan atau rencana belanja bulananmu. Apakah kamu akan membelinya?"
+                </p>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="setInitialAnswer('Beli')" id="btn-pre-beli" class="w-full py-3 px-4 rounded-xl border-2 border-slate-700 bg-slate-900 hover:border-amber-500 text-slate-200 font-bold transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cart-shopping text-emerald-400"></i> Beli
+                    </button>
+                    <button onclick="setInitialAnswer('Tidak')" id="btn-pre-tidak" class="w-full py-3 px-4 rounded-xl border-2 border-slate-700 bg-slate-900 hover:border-amber-500 text-slate-200 font-bold transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-hand-lines text-rose-400"></i> Tidak Beli
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="startInvestigation()" id="btn-start" disabled class="w-full py-4 bg-slate-700 text-slate-400 font-bold text-lg rounded-xl shadow-lg cursor-not-allowed transition duration-200 flex items-center justify-center gap-2">
+                <span>Lengkapi Nama, Kelas & Pilih Jawabanmu</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </section>
+
+        <!-- ==================== LAYAR GAME / KASUS (DYNAMIC) ==================== -->
+        <section id="screen-case" class="hidden flex-col gap-5">
+            
+            <!-- Case Header -->
+            <div class="flex justify-between items-center bg-slate-800/60 p-4 rounded-xl border border-slate-700">
+                <div>
+                    <span id="case-number-badge" class="text-xs font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">Kasus 1 dari 6</span>
+                    <h2 id="case-title" class="heading-font text-xl font-bold text-white mt-1">Diskon Bertingkat</h2>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs text-slate-400">Poin Kasus Ini</div>
+                    <div id="case-points" class="text-lg font-bold text-amber-400">20 Pts</div>
+                </div>
+            </div>
+
+            <!-- Case Scenario Card -->
+            <div class="detective-card p-5">
+                <p id="case-description" class="text-slate-200 text-sm md:text-base leading-relaxed">
+                    Deskripsi kasus...
+                </p>
+            </div>
+
+            <!-- TAHAP 1: TEBAK PENAWARAN LEBIH MURAH -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center px-1">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-900 text-xs flex items-center justify-center font-extrabold">1</span>
+                        Tahap 1: Tebak Penawaran Terhemat
+                    </h3>
+                    <span id="lock-status-badge" class="text-xs text-slate-400 italic">Pilih salah satu lalu kunci tebakan</span>
+                </div>
+
+                <!-- Dynamic Option Cards Grid -->
+                <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic cards injected by JS -->
+                </div>
+
+                <button onclick="lockGuess()" id="btn-lock-guess" disabled class="w-full py-3 bg-slate-700 text-slate-400 font-bold rounded-xl transition cursor-not-allowed flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Kunci Tebakan (Tahap 1)</span>
+                </button>
+            </div>
+
+            <!-- TAHAP 2: HITUNG HARGA AKHIR (LOCKED UNTIL TAHAP 1 COMPLETED) -->
+            <div id="section-tahap2" class="detective-card p-5 opacity-60 pointer-events-none transition duration-300">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-5 h-5 rounded-full bg-amber-500 text-slate-900 text-xs flex items-center justify-center font-extrabold">2</span>
+                    <h3 class="text-sm font-semibold text-amber-300 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator"></i> Tahap 2: Hitung Harga Akhir
+                    </h3>
+                </div>
+
+                <!-- DYNAMIC CALCULATION FORM INJECTED BY JS -->
+                <div id="calc-inputs-container" class="space-y-4">
+                    <!-- Standard or Scenario inputs -->
+                </div>
+
+                <button onclick="submitCaseAnswer()" id="btn-submit-case" disabled class="w-full mt-5 py-3.5 bg-slate-700 text-slate-400 font-bold rounded-xl transition duration-200 shadow-lg cursor-not-allowed flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Verifikasi Analisis Detektif</span>
+                </button>
+            </div>
+
+            <!-- RESULT & DETECTIVE LESSON BOX (HIDDEN INITIALLY) -->
+            <div id="result-box" class="hidden detective-card p-5 border-2 animate-pop">
+                <div id="result-header" class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-700">
+                    <!-- Dynamic Result Icon & Title -->
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Step by Step Calculation Breakdown -->
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check"></i> Langkah Perhitungan Matematika:
+                        </h4>
+                        <div id="math-breakdown" class="text-sm text-slate-300 space-y-2 font-mono">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Detective Financial Literacy Message -->
+                    <div class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl">
+                        <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-lightbulb"></i> Pesan Literasi Detektif:
+                        </h4>
+                        <p id="detective-lesson" class="text-sm text-slate-200 leading-relaxed">
+                            <!-- Injected by JS -->
+                        </p>
+                    </div>
+                </div>
+
+                <button onclick="nextCase()" class="w-full mt-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2">
+                    <span>Lanjut ke Kasus Berikutnya</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+        </section>
+
+        <!-- ==================== LAYAR FINISH: RESULT & REFLECTION ==================== -->
+        <section id="screen-finish" class="hidden detective-card p-6 md:p-8 text-center shadow-2xl">
+            <div id="badge-icon-container" class="w-24 h-24 bg-amber-500/20 border-2 border-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 text-5xl text-amber-400">
+                <i class="fa-solid fa-award"></i>
+            </div>
+
+            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Laporan Akhir Investigasi</span>
+            <h2 id="final-student-info" class="text-lg text-slate-300 font-medium">Siswa: -</h2>
+            <h2 id="final-badge-title" class="heading-font text-3xl text-amber-400 font-bold mb-1">Detektif Senior</h2>
+            <p id="final-score-text" class="text-slate-300 text-sm mb-6">Total Skor Kamu: <span class="text-amber-400 font-bold text-xl">0 / 120</span></p>
+
+            <!-- Pre vs Post Vote Section -->
+            <div class="bg-slate-900/80 border border-slate-700 p-5 rounded-xl text-left mb-6 space-y-4">
+                <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wide flex items-center gap-2">
+                    <i class="fa-solid fa-rotate"></i> Evaluasi Sikap Belanja (Pra vs Pasca Investigasi)
+                </h3>
+                
+                <p class="text-xs text-slate-300">
+                    "Kamu melihat sepatu impianmu diskon 50%, tapi sebenarnya TIDAK ADA dalam daftar kebutuhanmu. Apakah kamu akan membelinya?"
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs md:text-sm">
+                    <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                        <span class="text-slate-400 block mb-1">Jawaban Awal (Pra-Vote):</span>
+                        <span id="summary-pre-answer" class="font-bold text-amber-300">-</span>
+                    </div>
+                    <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                        <span class="text-slate-400 block mb-1">Jawaban Ulang (Pasca-Vote):</span>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <button onclick="setPostAnswer('Beli')" id="btn-post-beli" class="py-1.5 px-3 rounded-lg border border-slate-700 bg-slate-900 text-xs font-bold text-slate-200 hover:border-amber-500">
+                                Beli
+                            </button>
+                            <button onclick="setPostAnswer('Tidak')" id="btn-post-tidak" class="py-1.5 px-3 rounded-lg border border-slate-700 bg-slate-900 text-xs font-bold text-slate-200 hover:border-amber-500">
+                                Tidak Beli
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Literacy Rules Checkpoint -->
+                <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 space-y-3 text-xs">
+                    <h4 class="font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-shield-cat"></i> 2 Uji Literasi Keuangan Detektif:
+                    </h4>
+                    <div class="space-y-2 text-slate-300">
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-circle-question text-amber-400 mt-0.5"></i>
+                            <div>
+                                <b>1. Pertanyaan Uji Besok:</b> "Apakah aku akan tetap membeli barang ini besok jika harganya kembali ke harga normal tanpa diskon?" Jika tidak, kamu hanya tergiur diskonnya, bukan barangnya.
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-clock text-amber-400 mt-0.5"></i>
+                            <div>
+                                <b>2. Aturan 3 Hari (Tunda 72 Jam):</b> Untuk barang di luar rencana bulanan, beri waktu berpikir selama 3 hari (72 jam). Jika setelah 3 hari kamu masih membutuhkannya, baru pertimbangkan membeli!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reflection Essay Question -->
+            <div class="bg-slate-900/80 border border-slate-700 p-5 rounded-xl text-left mb-6">
+                <label class="block text-sm font-bold text-amber-300 mb-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Pertanyaan Refleksi Siswa:
+                </label>
+                <p class="text-xs text-slate-300 mb-3">
+                    Strategi jebakan diskon mana yang paling sering kamu temui di kehidupan nyata, dan bagaimana caramu menghindarinya di masa depan?
+                </p>
+                <textarea id="reflection-input" rows="3" placeholder="Tuliskan pengalaman atau refleksimu di sini..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-amber-500"></textarea>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="restartGame()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl transition border border-slate-700 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Ulang Investigasi
+                </button>
+                <button onclick="copySummaryReport()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-copy"></i> Salin Laporan Hasil
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900/60 border-t border-slate-800/80 py-3 text-center text-xs text-slate-500">
+        Diskon Detektif &copy; 2026 — Pembelajaran Literasi Keuangan & Matematika SMA Kelas X
+    </footer>
+
+    <!-- ==================== MODE GURU MODAL ==================== -->
+    <div id="modal-guru" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="detective-card p-6 max-w-lg w-full relative">
+            <button onclick="closeGuruModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <!-- Step 1: PIN Input -->
+            <div id="guru-auth" class="space-y-4 text-center">
+                <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/40 rounded-full flex items-center justify-center mx-auto text-amber-400 text-xl">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="heading-font text-xl font-bold text-amber-400">Akses Mode Guru</h3>
+                <p class="text-xs text-slate-300">Masukkan PIN khusus guru/pengajar untuk melihat Kunci Jawaban & Panduan Pembelajaran.</p>
+                <input type="password" id="guru-pin" maxlength="6" placeholder="Masukkan PIN Guru" class="w-44 text-center text-xl font-bold tracking-widest bg-slate-900 border border-slate-700 rounded-lg py-2 text-amber-400 focus:outline-none focus:border-amber-500 mx-auto block">
+                <p id="guru-pin-error" class="text-xs text-rose-400 hidden">PIN Salah! Silakan coba lagi.</p>
+                <button onclick="verifyGuruPin()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-sm">
+                    Buka Kunci Jawaban
+                </button>
+            </div>
+
+            <!-- Step 2: Answer Keys Content -->
+            <div id="guru-content" class="hidden space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                    <h3 class="heading-font text-lg font-bold text-amber-400 flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark"></i> Kunci Jawaban Kasus 1-6
+                    </h3>
+                    <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">Mode Guru</span>
+                </div>
+
+                <div id="guru-answers-list" class="space-y-3 text-xs">
+                    <!-- Injected by JS -->
+                </div>
+
+                <button onclick="closeGuruModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg text-xs border border-slate-700">
+                    Tutup Panduan Guru
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM TOAST / NOTIFICATION MESSAGE BOX -->
+    <div id="toast-msg" class="fixed bottom-5 right-5 z-50 hidden bg-slate-800 border border-amber-500 text-amber-300 px-4 py-3 rounded-xl shadow-2xl text-sm flex items-center gap-3">
+        <i class="fa-solid fa-circle-info"></i>
+        <span id="toast-text">Pesan notifikasi</span>
+    </div>
+
+    <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+    <script>
+        /**
+         * DISKON DETEKTIF - Application State & Data Structure
+         */
+        
+        // KONSTANTA MODE GURU (Dapat diubah oleh guru di sini)
+        const GURU_PIN = "1234";
+
+        let studentName = "";
+        let studentClass = "";
+        let preChoice = null;  // 'Beli' or 'Tidak'
+        let postChoice = null; // 'Beli' or 'Tidak'
+        
+        let currentCaseIndex = 0;
+        let totalScore = 0;
+        
+        let selectedOption = null; // 'A', 'B', 'C', or 'D'
+        let isGuessLocked = false;
+        let userAnswersHistory = [];
+
+        // Formatting utilities
+        function formatRupiah(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        // Sanitizer to convert user string inputs into clean numbers
+        function parseNumericInput(valStr) {
+            if (!valStr) return 0;
+            // Removes all non-numeric characters except digits
+            const cleaned = valStr.toString().replace(/[^0-9]/g, '');
+            return cleaned ? parseInt(cleaned, 10) : 0;
+        }
+
+        // DATA CASES (1 to 6)
+        const casesData = [
+            {
+                id: 1,
+                title: "Diskon Bertingkat",
+                points: 20,
+                description: "Sebuah sepatu seharga <b>Rp200.000</b> dijual di dua toko berbeda. Toko A menawarkan diskon bertingkat <b>50% + 20%</b>, sedangkan Toko B menawarkan diskon tunggal <b>65%</b>. Mana yang memberikan harga akhir lebih murah?",
+                options: [
+                    { id: 'A', name: "Toko A", details: ["Harga Awal: Rp200.000", "Promo: Diskon 50% + 20%"] },
+                    { id: 'B', name: "Toko B", details: ["Harga Awal: Rp200.000", "Promo: Diskon 65% Langsung"] }
+                ],
+                calcInputs: [
+                    { key: 'priceA', label: 'Harga Akhir Toko A (Rp)' },
+                    { key: 'priceB', label: 'Harga Akhir Toko B (Rp)' }
+                ],
+                calcLogic: (inputs) => {
+                    const priceA = 200000 * (1 - 0.50) * (1 - 0.20); // 80.000
+                    const priceB = 200000 * (1 - 0.65);             // 70.000
+                    const userA = parseNumericInput(inputs.priceA);
+                    const userB = parseNumericInput(inputs.priceB);
+
+                    const isMathCorrect = (Math.abs(userA - priceA) <= 100) && (Math.abs(userB - priceB) <= 100);
+
+                    return {
+                        cheaper: 'B',
+                        isMathCorrect: isMathCorrect,
+                        priceA: priceA,
+                        priceB: priceB,
+                        breakdown: `
+                            • <b>Toko A (Diskon 50% + 20%):</b><br>
+                              Tahap 1: Diskon 50% × Rp200.000 = Rp100.000 (Sisa harga: Rp100.000)<br>
+                              Tahap 2: Diskon 20% × Rp100.000 = Rp20.000<br>
+                              <b>Harga Akhir Toko A = Rp80.000</b><br><br>
+                            • <b>Toko B (Diskon 65%):</b><br>
+                              Diskon 65% × Rp200.000 = Rp130.000<br>
+                              <b>Harga Akhir Toko B = Rp70.000</b>
+                        `,
+                        lesson: "<b>Jebakan Diskon Bertingkat:</b> Diskon 50% + 20% TIDAK SAMA dengan diskon 70%! Diskon kedua dihitung dari <i>sisa harga</i> setelah diskon pertama. Toko B (65%) terbukti lebih murah Rp10.000 dibanding Toko A."
+                    };
+                }
+            },
+            {
+                id: 2,
+                title: "Persen Besar Belum Tentu Untung",
+                points: 20,
+                description: "Dua toko menjual jaket dengan harga dasar berbeda. Toko A menjual jaket seharga <b>Rp250.000</b> dengan <b>diskon 40%</b>. Toko B menjual jaket sejenis seharga <b>Rp180.000</b> dengan <b>diskon 20%</b>. Mana yang harga bayarnya lebih murah?",
+                options: [
+                    { id: 'A', name: "Toko A", details: ["Harga Awal: Rp250.000", "Promo: Diskon 40%"] },
+                    { id: 'B', name: "Toko B", details: ["Harga Awal: Rp180.000", "Promo: Diskon 20%"] }
+                ],
+                calcInputs: [
+                    { key: 'priceA', label: 'Harga Akhir Toko A (Rp)' },
+                    { key: 'priceB', label: 'Harga Akhir Toko B (Rp)' }
+                ],
+                calcLogic: (inputs) => {
+                    const priceA = 250000 * (1 - 0.40); // 150.000
+                    const priceB = 180000 * (1 - 0.20); // 144.000
+                    const userA = parseNumericInput(inputs.priceA);
+                    const userB = parseNumericInput(inputs.priceB);
+
+                    const isMathCorrect = (Math.abs(userA - priceA) <= 100) && (Math.abs(userB - priceB) <= 100);
+
+                    return {
+                        cheaper: 'B',
+                        isMathCorrect: isMathCorrect,
+                        priceA: priceA,
+                        priceB: priceB,
+                        breakdown: `
+                            • <b>Toko A (Diskon 40% dari Rp250.000):</b><br>
+                              Potongan = 40% × Rp250.000 = Rp100.000<br>
+                              <b>Harga Akhir Toko A = Rp150.000</b><br><br>
+                            • <b>Toko B (Diskon 20% dari Rp180.000):</b><br>
+                              Potongan = 20% × Rp180.000 = Rp36.000<br>
+                              <b>Harga Akhir Toko B = Rp144.000</b>
+                        `,
+                        lesson: "<b>Jangan Terkecoh Persentase:</b> Persentase diskon tinggi (40%) terlihat menggiurkan, tapi jika harga dasarnya sudah ditinggikan, hasil akhirnya bisa lebih mahal dibanding diskon kecil (20%) dari harga awal yang wajar."
+                    };
+                }
+            },
+            {
+                id: 3,
+                title: "Jebakan Maksimal Nilai Diskon",
+                points: 20,
+                description: "Kamu akan berbelanja tas sekolah senilai <b>Rp100.000</b>. Toko A menawarkan <b>Diskon 50% (Maksimal Potongan Rp25.000)</b>. Toko B menawarkan <b>Diskon 30% Tanpa Batas</b>. Toko mana yang bayarnya lebih murah?",
+                options: [
+                    { id: 'A', name: "Toko A", details: ["Harga Awal: Rp100.000", "Promo: Diskon 50% (Maks Rp25.000)"] },
+                    { id: 'B', name: "Toko B", details: ["Harga Awal: Rp100.000", "Promo: Diskon 30% Tanpa Batas"] }
+                ],
+                calcInputs: [
+                    { key: 'priceA', label: 'Harga Akhir Toko A (Rp)' },
+                    { key: 'priceB', label: 'Harga Akhir Toko B (Rp)' }
+                ],
+                calcLogic: (inputs) => {
+                    const priceA = 100000 - Math.min(100000 * 0.50, 25000); // 75.000
+                    const priceB = 100000 * (1 - 0.30);                     // 70.000
+                    const userA = parseNumericInput(inputs.priceA);
+                    const userB = parseNumericInput(inputs.priceB);
+
+                    const isMathCorrect = (Math.abs(userA - priceA) <= 100) && (Math.abs(userB - priceB) <= 100);
+
+                    return {
+                        cheaper: 'B',
+                        isMathCorrect: isMathCorrect,
+                        priceA: priceA,
+                        priceB: priceB,
+                        breakdown: `
+                            • <b>Toko A (Diskon 50% Maks Rp25.000):</b><br>
+                              50% × Rp100.000 = Rp50.000, namun dibatasi Maksimal Rp25.000.<br>
+                              Potongan yang didapat = Rp25.000<br>
+                              <b>Harga Akhir Toko A = Rp75.000</b><br><br>
+                            • <b>Toko B (Diskon 30% Tanpa Batas):</b><br>
+                              Potongan = 30% × Rp100.000 = Rp30.000<br>
+                              <b>Harga Akhir Toko B = Rp70.000</b>
+                        `,
+                        lesson: "<b>Perhatikan Tulisan Kecil (Syarat & Ketentuan):</b> Syarat 'Maksimal Potongan' membatasi diskon sesungguhnya. Diskon 50% di Toko A terpotong batas maksimal sehingga nilainya efektif hanya 25%."
+                    };
+                }
+            },
+            {
+                id: 4,
+                title: "Syarat Minimal Pembelian Food Delivery",
+                points: 20,
+                description: "Kamu memesan makanan online. Kamu punya dua opsi voucher:<br>• <b>Voucher A:</b> Diskon 40% (Min. Belanja Rp120.000, Maks Potongan Rp50.000)<br>• <b>Voucher B:</b> Diskon 25% (Min. Belanja Rp60.000, Tanpa Maksimal)<br><br>Hitung harga akhir untuk 3 skenario total belanjaan berikut, dan tebak voucher mana yang lebih menguntungkan pada skenario <b>Rp150.000</b>!",
+                options: [
+                    { id: 'A', name: "Voucher A Lebih Hemat", details: ["Fokus pada skenario belanja Rp150.000"] },
+                    { id: 'B', name: "Voucher B Lebih Hemat", details: ["Fokus pada skenario belanja Rp150.000"] }
+                ],
+                calcInputs: [
+                    { key: 'scen100A', label: 'Belanja Rp100.000 - Bayar Pakai Voucher A (Rp):' },
+                    { key: 'scen100B', label: 'Belanja Rp100.000 - Bayar Pakai Voucher B (Rp):' },
+                    { key: 'scen150A', label: 'Belanja Rp150.000 - Bayar Pakai Voucher A (Rp):' },
+                    { key: 'scen150B', label: 'Belanja Rp150.000 - Bayar Pakai Voucher B (Rp):' },
+                    { key: 'scen250A', label: 'Belanja Rp250.000 - Bayar Pakai Voucher A (Rp):' },
+                    { key: 'scen250B', label: 'Belanja Rp250.000 - Bayar Pakai Voucher B (Rp):' }
+                ],
+                calcLogic: (inputs) => {
+                    // Scenario 1: Rp100.000 -> A: 100.000 (not active min 120k), B: 100.000 - 25% = 75.000
+                    const correct100A = 100000;
+                    const correct100B = 75000;
+
+                    // Scenario 2: Rp150.000 -> A: 150.000 - Math.min(60k, 50k) = 100.000, B: 150.000 - 37.500 = 112.500 (A cheaper)
+                    const correct150A = 100000;
+                    const correct150B = 112500;
+
+                    // Scenario 3: Rp250.000 -> A: 250.000 - 50k = 200.000, B: 250.000 - 62.500 = 187.500 (B cheaper)
+                    const correct250A = 200000;
+                    const correct250B = 187500;
+
+                    const u100A = parseNumericInput(inputs.scen100A);
+                    const u100B = parseNumericInput(inputs.scen100B);
+                    const u150A = parseNumericInput(inputs.scen150A);
+                    const u150B = parseNumericInput(inputs.scen150B);
+                    const u250A = parseNumericInput(inputs.scen250A);
+                    const u250B = parseNumericInput(inputs.scen250B);
+
+                    const isMathCorrect = (
+                        Math.abs(u100A - correct100A) <= 100 &&
+                        Math.abs(u100B - correct100B) <= 100 &&
+                        Math.abs(u150A - correct150A) <= 100 &&
+                        Math.abs(u150B - correct150B) <= 100 &&
+                        Math.abs(u250A - correct250A) <= 100 &&
+                        Math.abs(u250B - correct250B) <= 100
+                    );
+
+                    return {
+                        cheaper: 'A', // For 150.000 scenario, Voucher A is cheaper (100.000 vs 112.500)
+                        isMathCorrect: isMathCorrect,
+                        breakdown: `
+                            • <b>Skenario 1 (Belanja Rp100.000):</b><br>
+                              - Voucher A: TIDAK AKTIF (Belum capai min. Rp120rb) -> Bayar = <b>Rp100.000</b><br>
+                              - Voucher B: AKTIF (25% off) -> Bayar = <b>Rp75.000</b><br><br>
+                            • <b>Skenario 2 (Belanja Rp150.000):</b><br>
+                              - Voucher A: AKTIF (40% = Rp60rb, dipotong max Rp50rb) -> Bayar = <b>Rp100.000</b> (PEMENANG)<br>
+                              - Voucher B: AKTIF (25% = Rp37.500) -> Bayar = <b>Rp112.500</b><br><br>
+                            • <b>Skenario 3 (Belanja Rp250.000):</b><br>
+                              - Voucher A: AKTIF (Maks potongan Rp50rb) -> Bayar = <b>Rp200.000</b><br>
+                              - Voucher B: AKTIF (25% tanpa batas = Rp62.500) -> Bayar = <b>Rp187.500</b>
+                        `,
+                        lesson: "<b>Jebakan Minimal Belanja:</b> Voucher dengan diskon besar (40%) butuh minimal belanja tinggi. Pada belanja Rp150.000 Voucher A menang, tetapi pada belanja Rp250.000 batas maksimal diskon Voucher A membuatnya kalah dari Voucher B!"
+                    };
+                }
+            },
+            {
+                id: 5,
+                title: "Perbandingan Metode Pembayaran",
+                points: 20,
+                description: "Sebuah barang seharga <b>Rp150.000</b> dengan ongkos kirim <b>Rp10.000</b> menawarkan promo berdasarkan metode pembayaran:<br>• <b>Opsi A (E-Wallet):</b> Cashback 10% berupa koin + Gratis Ongkir Rp10.000.<br>• <b>Opsi B (Kartu Kredit / Paylater):</b> Diskon 15%, tapi ada Biaya Layanan Rp5.000 & Ongkir Rp10.000 tetap bayar.<br>Mana opsi yang beban biaya bersihnya lebih murah?",
+                options: [
+                    { id: 'A', name: "Opsi A (E-Wallet)", details: ["Biaya Bersih setelah memperhitungkan Cashback Koin & Gratis Ongkir"] },
+                    { id: 'B', name: "Opsi B (Kartu/Paylater)", details: ["Total Bayar setelah Diskon 15% + Biaya Admin Rp5.000 + Ongkir"] }
+                ],
+                calcInputs: [
+                    { key: 'priceA', label: 'Beban Biaya Bersih Opsi A (Rp)' },
+                    { key: 'priceB', label: 'Total Bayar Opsi B (Rp)' }
+                ],
+                calcLogic: (inputs) => {
+                    // Opsi A: Barang Rp150.000 + Ongkir Rp10.000 - Cashback Koin Rp15.000 - Gratis Ongkir Rp10.000 = Rp135.000
+                    const priceA = 135000;
+                    // Opsi B: Barang (150k - 15% = 127.500) + Admin Rp5.000 + Ongkir Rp10.000 = Rp142.500
+                    const priceB = 142500;
+
+                    const userA = parseNumericInput(inputs.priceA);
+                    const userB = parseNumericInput(inputs.priceB);
+
+                    const isMathCorrect = (Math.abs(userA - priceA) <= 100) && (Math.abs(userB - priceB) <= 100);
+
+                    return {
+                        cheaper: 'A',
+                        isMathCorrect: isMathCorrect,
+                        priceA: priceA,
+                        priceB: priceB,
+                        breakdown: `
+                            • <b>Opsi A (E-Wallet):</b><br>
+                              Bayar awal: Rp150.000 (Barang) + Rp0 (Ongkir Gratis) = Rp150.000.<br>
+                              Dapat Cashback Koin 10% = Rp15.000.<br>
+                              <b>Beban Biaya Bersih (Net Value) = Rp150.000 - Rp15.000 = Rp135.000</b><br><br>
+                            • <b>Opsi B (Kartu Kredit / Paylater):</b><br>
+                              Harga barang diskon 15%: Rp150.000 - Rp22.500 = Rp127.500<br>
+                              Ditambah Ongkir Rp10.000 + Admin Layanan Rp5.000<br>
+                              <b>Total Bayar = Rp127.500 + Rp10.000 + Rp5.000 = Rp142.500</b>
+                        `,
+                        lesson: "<b>Penting tentang Cashback Koin:</b> Cashback koin BUKAN potongan harga langsung di kasir! Kamu tetap harus keluar uang tunai di awal, tetapi koin tersebut bernilai ekonomis untuk belanja berikutnya. Opsi A menghasilkan nilai biaya bersih Rp135.000, lebih murah dari Opsi B."
+                    };
+                }
+            },
+            {
+                id: 6,
+                title: "MISI BONUS: Pembelian Laptop Sekolah",
+                points: 20,
+                description: "Kamu akan membeli laptop seharga <b>Rp6.000.000</b> untuk keperluan sekolah. Ada 4 opsi pembayaran:<br>• <b>Opsi A (Tunai):</b> Diskon 2%<br>• <b>Opsi B (Kartu Debit):</b> Diskon Rp100.000<br>• <b>Opsi C (Kartu Kredit ABC):</b> Diskon Rp200.000 + Admin 3% dari total setelah diskon<br>• <b>Opsi D (Kartu Kredit XYZ Cicilan 12 Bulan):</b> Diskon Rp500.000, Bunga Flat 1%/bulan dari harga setelah diskon, ditambah Admin 3% dari total yang dibayar.<br>Mana opsi yang total pengeluarannya paling murah?",
+                options: [
+                    { id: 'A', name: "Opsi A (Tunai)", details: ["Diskon 2%"] },
+                    { id: 'B', name: "Opsi B (Debit)", details: ["Diskon Rp100.000"] },
+                    { id: 'C', name: "Opsi C (KK ABC)", details: ["Diskon Rp200.000 + Admin 3%"] },
+                    { id: 'D', name: "Opsi D (KK XYZ Cicilan 12bln)", details: ["Diskon Rp500rb + Bunga Flat 1%/bln + Admin 3%"] }
+                ],
+                calcInputs: [
+                    { key: 'priceA', label: 'Total Opsi A - Tunai (Rp)' },
+                    { key: 'priceB', label: 'Total Opsi B - Debit (Rp)' },
+                    { key: 'priceC', label: 'Total Opsi C - KK ABC (Rp)' },
+                    { key: 'priceD', label: 'Total Opsi D - KK XYZ (Rp)' }
+                ],
+                calcLogic: (inputs) => {
+                    // Opsi A: 6.000.000 * 0.98 = 5.880.000
+                    const priceA = 5880000;
+                    // Opsi B: 6.000.000 - 100.000 = 5.900.000
+                    const priceB = 5900000;
+                    // Opsi C: (6.000.000 - 200.000) * 1.03 = 5.800.000 * 1.03 = 5.974.000
+                    const priceC = 5974000;
+                    // Opsi D: 
+                    // 1. Diskon: 6.000.000 - 500.000 = 5.500.000
+                    // 2. Bunga 12 bulan (1% flat per bulan = 12% total): 5.500.000 * 1.12 = 6.160.000
+                    // 3. Admin 3% dari nilai dibayar: 6.160.000 * 1.03 = 6.344.800
+                    const priceD = 6344800;
+
+                    const uA = parseNumericInput(inputs.priceA);
+                    const uB = parseNumericInput(inputs.priceB);
+                    const uC = parseNumericInput(inputs.priceC);
+                    const uD = parseNumericInput(inputs.priceD);
+
+                    const isMathCorrect = (
+                        Math.abs(uA - priceA) <= 100 &&
+                        Math.abs(uB - priceB) <= 100 &&
+                        Math.abs(uC - priceC) <= 100 &&
+                        Math.abs(uD - priceD) <= 100
+                    );
+
+                    return {
+                        cheaper: 'A',
+                        isMathCorrect: isMathCorrect,
+                        priceA: priceA,
+                        priceB: priceB,
+                        priceC: priceC,
+                        priceD: priceD,
+                        breakdown: `
+                            • <b>Opsi A (Tunai):</b><br>
+                              Diskon 2% × Rp6.000.000 = Rp120.000<br>
+                              <b>Total Bayar = Rp5.880.000</b> (PALING CHEAP/MURAH)<br><br>
+                            • <b>Opsi B (Kartu Debit):</b><br>
+                              Rp6.000.000 - Rp100.000 = <b>Rp5.900.000</b><br><br>
+                            • <b>Opsi C (Kartu Kredit ABC):</b><br>
+                              Setelah Diskon: Rp5.800.000<br>
+                              Biaya Admin 3%: Rp174.000<br>
+                              <b>Total Bayar = Rp5.974.000</b><br><br>
+                            • <b>Opsi D (KK XYZ Cicilan 12 Bulan):</b><br>
+                              Setelah Diskon: Rp5.500.000<br>
+                              + Bunga 12% (1% x 12 bln): Rp660.000 -> Subtotal Rp6.160.000<br>
+                              + Biaya Admin 3% dari nilai bayar: Rp184.800<br>
+                              <b>Total Bayar Akhir = Rp6.344.800</b>
+                        `,
+                        lesson: "<b>Bahaya Cicilan & Biaya Admin Tambahan:</b> Pembayaran kredit/cicilan sering kali menawarkan diskon paling besar di depan (Rp500.000), tetapi akumulasi bunga bulanan dan biaya admin justru membuatmu membayar jauh lebih mahal (Rp6.344.800)! Tunai terbukti paling hemat."
+                    };
+                }
+            }
+        ];
+
+        /**
+         * WELCOME & START LOGIC
+         */
+        function setInitialAnswer(choice) {
+            preChoice = choice;
+            document.getElementById('btn-pre-beli').classList.remove('border-amber-500', 'bg-amber-500/20');
+            document.getElementById('btn-pre-tidak').classList.remove('border-amber-500', 'bg-amber-500/20');
+
+            if (choice === 'Beli') {
+                document.getElementById('btn-pre-beli').classList.add('border-amber-500', 'bg-amber-500/20');
+            } else {
+                document.getElementById('btn-pre-tidak').classList.add('border-amber-500', 'bg-amber-500/20');
+            }
+
+            validateWelcomeForm();
+        }
+
+        // Live check if student details & preChoice are filled
+        document.getElementById('student-name').addEventListener('input', validateWelcomeForm);
+        document.getElementById('student-class').addEventListener('input', validateWelcomeForm);
+
+        function validateWelcomeForm() {
+            const name = document.getElementById('student-name').value.trim();
+            const sClass = document.getElementById('student-class').value.trim();
+            const startBtn = document.getElementById('btn-start');
+
+            if (name && sClass && preChoice) {
+                startBtn.disabled = false;
+                startBtn.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+                startBtn.classList.add('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+                startBtn.querySelector('span').innerText = `Mulai Investigasi (Detektif: ${name})`;
+            } else {
+                startBtn.disabled = true;
+                startBtn.classList.add('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+                startBtn.classList.remove('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+                startBtn.querySelector('span').innerText = "Lengkapi Nama, Kelas & Pilih Jawabanmu";
+            }
+        }
+
+        function startInvestigation() {
+            studentName = document.getElementById('student-name').value.trim();
+            studentClass = document.getElementById('student-class').value.trim();
+
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-case').classList.remove('hidden');
+            document.getElementById('screen-case').classList.add('flex');
+            document.getElementById('top-score-badge').classList.remove('hidden');
+            
+            currentCaseIndex = 0;
+            totalScore = 0;
+            userAnswersHistory = [];
+            updateGlobalScoreDisplay();
+            loadCase(currentCaseIndex);
+        }
+
+        /**
+         * CASE LOADING & TAHAP 1 SYSTEM
+         */
+        function loadCase(index) {
+            const caseData = casesData[index];
+            selectedOption = null;
+            isGuessLocked = false;
+
+            // Header Info
+            document.getElementById('case-number-badge').innerText = `Kasus ${index + 1} dari ${casesData.length}`;
+            document.getElementById('case-title').innerText = caseData.title;
+            document.getElementById('case-points').innerText = `${caseData.points} Pts`;
+            document.getElementById('case-description').innerHTML = caseData.description;
+
+            // Reset Tahap 1 Lock Button
+            const lockBtn = document.getElementById('btn-lock-guess');
+            lockBtn.disabled = true;
+            lockBtn.classList.add('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+            lockBtn.classList.remove('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+            lockBtn.querySelector('span').innerText = "Kunci Tebakan (Tahap 1)";
+            document.getElementById('lock-status-badge').innerText = "Pilih salah satu lalu kunci tebakan";
+            document.getElementById('lock-status-badge').className = "text-xs text-slate-400 italic";
+
+            // Render Dynamic Cards Grid for Options
+            const optionsGrid = document.getElementById('options-grid');
+            const colsClass = caseData.options.length > 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 md:grid-cols-2';
+            optionsGrid.className = `grid ${colsClass} gap-4`;
+
+            optionsGrid.innerHTML = caseData.options.map(opt => `
+                <div id="card-option-${opt.id}" onclick="selectOption('${opt.id}')" class="promo-card detective-card p-5 cursor-pointer hover:border-slate-500 relative flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-amber-300">${opt.name}</h3>
+                            <span class="bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded border border-slate-700">Opsi ${opt.id}</span>
+                        </div>
+                        <div class="text-slate-300 text-sm space-y-1 mb-3">
+                            ${opt.details.map(d => `<p>• ${d}</p>`).join('')}
+                        </div>
+                    </div>
+                    <div class="pt-3 border-t border-slate-700/60 flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Tebak Opsi Ini</span>
+                        <div class="w-6 h-6 rounded-full border-2 border-slate-500 flex items-center justify-center radio-indicator">
+                            <div class="w-3 h-3 rounded-full bg-amber-400 hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Reset & Disable Tahap 2 Form
+            const tahap2Box = document.getElementById('section-tahap2');
+            tahap2Box.classList.add('opacity-60', 'pointer-events-none');
+            
+            // Inject Dynamic Inputs into Tahap 2
+            const inputsContainer = document.getElementById('calc-inputs-container');
+            inputsContainer.innerHTML = caseData.calcInputs.map(inp => `
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">${inp.label}</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-slate-400 font-medium">Rp</span>
+                        <input type="text" inputmode="numeric" id="input-${inp.key}" placeholder="Contoh: 80.000 atau 80000" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-3 text-white focus:outline-none focus:border-amber-500 font-mono text-sm">
+                    </div>
+                </div>
+            `).join('');
+
+            // Hide previous result box
+            document.getElementById('result-box').classList.add('hidden');
+            
+            // Reset Submit Button
+            const submitBtn = document.getElementById('btn-submit-case');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+            submitBtn.classList.remove('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function selectOption(optId) {
+            if (isGuessLocked) return;
+
+            selectedOption = optId;
+            const currentCase = casesData[currentCaseIndex];
+
+            currentCase.options.forEach(opt => {
+                const card = document.getElementById(`card-option-${opt.id}`);
+                const dot = card.querySelector('.radio-indicator div');
+                if (opt.id === optId) {
+                    card.classList.add('selected');
+                    dot.classList.remove('hidden');
+                } else {
+                    card.classList.remove('selected');
+                    dot.classList.add('hidden');
+                }
+            });
+
+            // Enable Lock Button
+            const lockBtn = document.getElementById('btn-lock-guess');
+            lockBtn.disabled = false;
+            lockBtn.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+            lockBtn.classList.add('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+            lockBtn.querySelector('span').innerText = `Kunci Opsi ${optId} (Lanjut Tahap 2)`;
+        }
+
+        function lockGuess() {
+            if (!selectedOption || isGuessLocked) return;
+
+            isGuessLocked = true;
+            const currentCase = casesData[currentCaseIndex];
+
+            // Disable Card Clicks
+            currentCase.options.forEach(opt => {
+                const card = document.getElementById(`card-option-${opt.id}`);
+                card.classList.add('disabled');
+            });
+
+            // Lock Button Appearance
+            const lockBtn = document.getElementById('btn-lock-guess');
+            lockBtn.disabled = true;
+            lockBtn.classList.add('bg-emerald-600/30', 'text-emerald-400', 'border', 'border-emerald-500/40', 'cursor-default');
+            lockBtn.classList.remove('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+            lockBtn.querySelector('span').innerText = `Tebakan Terkunci: Opsi ${selectedOption}`;
+            
+            document.getElementById('lock-status-badge').innerText = "Tebakan terkunci! Sekarang selesaikan Tahap 2.";
+            document.getElementById('lock-status-badge').className = "text-xs text-emerald-400 font-semibold";
+
+            // Unlock Tahap 2 Section
+            const tahap2Box = document.getElementById('section-tahap2');
+            tahap2Box.classList.remove('opacity-60', 'pointer-events-none');
+
+            // Enable Submit Button
+            const submitBtn = document.getElementById('btn-submit-case');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+            submitBtn.classList.add('bg-amber-500', 'hover:bg-amber-400', 'text-slate-950');
+
+            showToast(`Opsi ${selectedOption} dikunci! Kolom perhitungan sekarang terbuka.`);
+        }
+
+        /**
+         * SUBMIT CASE ANSWER & EVALUATION
+         */
+        function submitCaseAnswer() {
+            const currentCase = casesData[currentCaseIndex];
+            
+            // Gather input values from Tahap 2
+            const inputsData = {};
+            let allInputsFilled = true;
+
+            currentCase.calcInputs.forEach(inp => {
+                const rawVal = document.getElementById(`input-${inp.key}`).value;
+                if (!rawVal.trim()) allInputsFilled = false;
+                inputsData[inp.key] = rawVal;
+            });
+
+            if (!allInputsFilled) {
+                showToast("Isi semua kolom perhitungan di Tahap 2!");
+                return;
+            }
+
+            // Run evaluation
+            const evalResult = currentCase.calcLogic(inputsData);
+            const isGuessCorrect = (selectedOption === evalResult.cheaper);
+            const isMathCorrect = evalResult.isMathCorrect;
+
+            let earnedPoints = 0;
+            if (isGuessCorrect) earnedPoints += 10;
+            if (isMathCorrect) earnedPoints += 10;
+
+            totalScore += earnedPoints;
+            updateGlobalScoreDisplay();
+
+            // Save history
+            userAnswersHistory.push({
+                caseId: currentCase.id,
+                title: currentCase.title,
+                guess: selectedOption,
+                isGuessCorrect: isGuessCorrect,
+                isMathCorrect: isMathCorrect,
+                earnedPoints: earnedPoints
+            });
+
+            // Display Results Box
+            const resultBox = document.getElementById('result-box');
+            const resultHeader = document.getElementById('result-header');
+
+            resultBox.classList.remove('hidden', 'border-emerald-500/50', 'border-rose-500/50', 'border-amber-500/50');
+
+            if (earnedPoints === 20) {
+                resultBox.classList.add('border-emerald-500/50');
+                resultHeader.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-emerald-400">Analisis Detektif Sempurna! (+20 Pts)</h3>
+                        <p class="text-xs text-slate-300">Tebakan pilihan terhemat benar dan seluruh hasil hitunganmu akurat.</p>
+                    </div>
+                `;
+            } else if (earnedPoints > 0) {
+                resultBox.classList.add('border-amber-500/50');
+                resultHeader.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-amber-400">Analisis Cukup Baik (+${earnedPoints} Pts)</h3>
+                        <p class="text-xs text-slate-300">${isGuessCorrect ? 'Tebakan opsi benar' : 'Tebakan opsi kurang tepat'}, ${isMathCorrect ? 'hitungan matematika benar' : 'ada kesalahan pada hitungan angka'}. Pelajari langkahnya di bawah.</p>
+                    </div>
+                `;
+            } else {
+                resultBox.classList.add('border-rose-500/50');
+                resultHeader.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-rose-400">Analisis Meleset (0 Pts)</h3>
+                        <p class="text-xs text-slate-300">Jangan berkecil hati! Mari pelajari pembongkaran trik promo ini.</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('math-breakdown').innerHTML = evalResult.breakdown;
+            document.getElementById('detective-lesson').innerHTML = evalResult.lesson;
+
+            // Lock Submit button to avoid re-submitting
+            const submitBtn = document.getElementById('btn-submit-case');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function updateGlobalScoreDisplay() {
+            document.getElementById('global-score').innerText = totalScore;
+        }
+
+        function nextCase() {
+            currentCaseIndex++;
+            if (currentCaseIndex < casesData.length) {
+                loadCase(currentCaseIndex);
+            } else {
+                showFinishScreen();
+            }
+        }
+
+        /**
+         * LAYAR FINISH & REFLEKSI (PASCA-VOTE)
+         */
+        function showFinishScreen() {
+            document.getElementById('screen-case').classList.add('hidden');
+            document.getElementById('screen-case').classList.remove('flex');
+            document.getElementById('screen-finish').classList.remove('hidden');
+
+            document.getElementById('final-student-info').innerText = `Detektif: ${studentName} (${studentClass})`;
+
+            // Badge determination (Total max score = 120 pts)
+            let badgeTitle = "Detektif Junior";
+            let badgeIcon = "fa-magnifying-glass";
+            let badgeColorClass = "text-amber-400";
+
+            if (totalScore >= 100) {
+                badgeTitle = "Detektif Senior Pembongkar Promo";
+                badgeIcon = "fa-shield-halved";
+                badgeColorClass = "text-emerald-400";
+            } else if (totalScore >= 60) {
+                badgeTitle = "Detektif Menengah (Pengamat Diskon)";
+                badgeIcon = "fa-award";
+                badgeColorClass = "text-amber-400";
+            } else {
+                badgeTitle = "Detektif Junior (Butuh Latihan Lanjutan)";
+                badgeIcon = "fa-user-secret";
+                badgeColorClass = "text-rose-400";
+            }
+
+            document.getElementById('final-badge-title').innerText = badgeTitle;
+            document.getElementById('final-badge-title').className = `heading-font text-2xl md:text-3xl font-bold mb-1 ${badgeColorClass}`;
+            document.getElementById('final-score-text').innerHTML = `Total Skor Investigasi: <span class="font-bold text-2xl ${badgeColorClass}">${totalScore} / 120 Pts</span>`;
+            
+            document.getElementById('summary-pre-answer').innerText = `"${preChoice}" (Jawaban Awal)`;
+
+            // Reset postChoice state
+            postChoice = null;
+            document.getElementById('btn-post-beli').classList.remove('border-amber-500', 'bg-amber-500/20');
+            document.getElementById('btn-post-tidak').classList.remove('border-amber-500', 'bg-amber-500/20');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function setPostAnswer(choice) {
+            postChoice = choice;
+            document.getElementById('btn-post-beli').classList.remove('border-amber-500', 'bg-amber-500/20');
+            document.getElementById('btn-post-tidak').classList.remove('border-amber-500', 'bg-amber-500/20');
+
+            if (choice === 'Beli') {
+                document.getElementById('btn-post-beli').classList.add('border-amber-500', 'bg-amber-500/20');
+            } else {
+                document.getElementById('btn-post-tidak').classList.add('border-amber-500', 'bg-amber-500/20');
+            }
+
+            showToast(`Jawaban Pasca-Vote disimpan: "${choice}"`);
+        }
+
+        function copySummaryReport() {
+            if (!postChoice) {
+                showToast("Pilih jawaban Pasca-Vote terlebih dahulu sebelum menyalin!");
+                return;
+            }
+
+            const reflection = document.getElementById('reflection-input').value.trim() || 'Belum diisi';
+            const text = `--- LAPORAN DISKON DETEKTIF ---
+Nama Siswa: ${studentName}
+Kelas: ${studentClass}
+Total Skor: ${totalScore}/120 Pts
+Lencana: ${document.getElementById('final-badge-title').innerText}
+
+EVALUASI SIKAP BELANJA (SEPATU DISKON 50% DILUAR RENCANA):
+- Pra-Vote (Sebelum Misi): ${preChoice}
+- Pasca-Vote (Setelah Misi): ${postChoice}
+
+REFLEKSI SISWA:
+"${reflection}"
+
+--- Literasi Keuangan Detektif SMA Kelas X ---`;
+
+            // Copy to clipboard
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast("Laporan lengkap berhasil disalin ke clipboard!");
+        }
+
+        /**
+         * RESTART GAME (FULL STATE RESET)
+         */
+        function restartGame() {
+            document.getElementById('screen-finish').classList.add('hidden');
+            document.getElementById('screen-welcome').classList.remove('hidden');
+            
+            // Reset state
+            studentName = "";
+            studentClass = "";
+            preChoice = null;
+            postChoice = null;
+            currentCaseIndex = 0;
+            totalScore = 0;
+            selectedOption = null;
+            isGuessLocked = false;
+            userAnswersHistory = [];
+
+            // Reset Input UI
+            document.getElementById('student-name').value = '';
+            document.getElementById('student-class').value = '';
+            document.getElementById('reflection-input').value = '';
+
+            document.getElementById('btn-pre-beli').classList.remove('border-amber-500', 'bg-amber-500/20');
+            document.getElementById('btn-pre-tidak').classList.remove('border-amber-500', 'bg-amber-500/20');
+
+            validateWelcomeForm();
+            document.getElementById('top-score-badge').classList.add('hidden');
+        }
+
+        /**
+         * MODE GURU (PIN PROTECTED)
+         */
+        function openGuruModal() {
+            document.getElementById('modal-guru').classList.remove('hidden');
+            document.getElementById('guru-auth').classList.remove('hidden');
+            document.getElementById('guru-content').classList.add('hidden');
+            document.getElementById('guru-pin').value = '';
+            document.getElementById('guru-pin-error').classList.add('hidden');
+        }
+
+        function closeGuruModal() {
+            document.getElementById('modal-guru').classList.add('hidden');
+        }
+
+        function verifyGuruPin() {
+            const pin = document.getElementById('guru-pin').value;
+            if (pin === GURU_PIN) {
+                document.getElementById('guru-auth').classList.add('hidden');
+                document.getElementById('guru-content').classList.remove('hidden');
+                renderGuruKeyAnswers();
+            } else {
+                document.getElementById('guru-pin-error').classList.remove('hidden');
+            }
+        }
+
+        function renderGuruKeyAnswers() {
+            const container = document.getElementById('guru-answers-list');
+            container.innerHTML = casesData.map((c, i) => {
+                // Call calcLogic with dummy full inputs to extract accurate solution
+                const dummyInputs = {
+                    priceA: '0', priceB: '0', priceC: '0', priceD: '0',
+                    scen100A: '100000', scen100B: '75000',
+                    scen150A: '100000', scen150B: '112500',
+                    scen250A: '200000', scen250B: '187500'
+                };
+                const sol = c.calcLogic(dummyInputs);
+                
+                return `
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg space-y-1">
+                        <div class="flex justify-between font-bold text-amber-400">
+                            <span>Kasus ${i+1}: ${c.title}</span>
+                            <span>Pemenang Opsi: ${sol.cheaper}</span>
+                        </div>
+                        <div class="text-slate-300 space-y-0.5 text-[11px] font-mono">
+                            ${sol.breakdown}
+                        </div>
+                        <p class="text-slate-400 text-[11px] italic mt-1 border-t border-slate-800 pt-1">Inti Literasi: ${sol.lesson.replace(/<[^>]*>?/gm, '')}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /**
+         * TOAST UTILITY
+         */
+        function showToast(message) {
+            const toast = document.getElementById('toast-msg');
+            document.getElementById('toast-text').innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
