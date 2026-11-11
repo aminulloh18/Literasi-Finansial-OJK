@@ -2,27 +2,31 @@
 <style>
 :root{--bg:#0F172A;--c:#1E293B;--t:#F8FAFC;--m:#94A3B8;--a:#F59E0B;--g:#10B981;--r:#F43F5E}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:16px/1.45 system-ui,sans-serif}
-#app{max-width:640px;margin:0 auto;padding:16px}#app.wide{max-width:900px}
+#app{max-width:640px;margin:0 auto;padding:16px}#app.wide{max-width:1000px}
 .card{background:var(--c);border:2px solid #334155;border-radius:16px;padding:18px;margin:12px 0}
 h1,h2{margin:.2em 0;color:var(--a)}
 input,select,textarea{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:2px solid #334155;background:var(--bg);color:var(--t);font:inherit}
 button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px 16px;background:var(--a);color:#0F172A;cursor:pointer}
 button.s{background:#334155;color:var(--t)}button.d{background:var(--r);color:#fff}button:disabled{opacity:.5}button:focus-visible,input:focus-visible{outline:3px solid #fff}
-.opts{display:grid;gap:10px}.o{display:flex;gap:10px;align-items:center;text-align:left;color:#fff;padding:16px}.o b{background:#0006;border-radius:8px;padding:2px 10px}
+.opts{display:grid;gap:10px}.o{display:flex;gap:10px;align-items:center;text-align:left;color:#fff;padding:16px;border-radius:12px}.o b{background:#0006;border-radius:8px;padding:2px 10px}
 .o0{background:#2563EB}.o1{background:#D97706}.o2{background:#7C3AED}.o3{background:#059669}.o.me{outline:4px solid #fff}
 .bar{height:10px;background:#334155;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--a)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>button{flex:1}.m{color:var(--m);font-size:14px}.big{font-size:22px;font-weight:700}
-table{width:100%;border-collapse:collapse}td{padding:8px;border-bottom:1px solid #334155}
+.two{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start}@media(max-width:600px){.two{grid-template-columns:1fr}}
+.it{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0;border-bottom:1px solid #334155}.it button{padding:6px 10px}.it .q{flex:1;min-width:180px}
+table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #334155;text-align:left}
 </style></head><body><main id="app"></main>
 <script>
 const API='https://script.google.com/macros/s/AKfycbxdp8xZAHlhheCWztk_KYXrXqH0LdNsNKMMcHRUjpSX0qzq6hXI_842p3OjJqfQfR_2rw/exec';
 const $=id=>document.getElementById(id),app=$('app'),L='ABCD';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function api(a,d={}){const r=await fetch(API,{method:'POST',body:JSON.stringify({a,...d})});const j=await r.json();if(!j.ok)throw new Error(j.err);return j}
-let S=JSON.parse(localStorage.getItem('kuis')||'{}'),T=null,P=null,off=0,key='';
-const save=()=>localStorage.setItem('kuis',JSON.stringify(S)),err=e=>alert(e.message||e),stop=()=>{clearInterval(T);clearTimeout(P)};
-function timer(t0,dur,end){const e=t0+dur*1000,f=()=>{const l=(e-(Date.now()+off))/1000;$('tm').textContent=Math.max(0,Math.ceil(l));$('tb').style.width=Math.max(0,l/dur*100)+'%';if(l<=0){clearInterval(T);end()}};f();T=setInterval(f,250)}
-function qView(q,dur,t0,total,pick){app.innerHTML=`<div class=row><span class=m>Soal ${q.no} dari ${total}</span><span class=big id=tm style="margin-left:auto"></span></div><div class=bar><i id=tb></i></div><div class=card><div class=big>${esc(q.q)}</div></div><div class=opts>${q.o.map((o,x)=>o?`<button class="o o${x}" data-l="${L[x]}"><b>${L[x]}</b>${esc(o)}</button>`:'').join('')}</div><p id=msg class=m></p>`;
+let S=JSON.parse(localStorage.getItem('kuis')||'{}'),T=null,T2=null,P=null,off=0,key='',E=0,PE=0;
+const save=()=>localStorage.setItem('kuis',JSON.stringify(S)),err=e=>alert(e.message||e),stop=()=>{clearInterval(T);clearInterval(T2);clearTimeout(P)};
+const imgu=u=>{const m=u.match(/\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/);return/drive\.google\.com/.test(u)&&m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000':u};
+const gimg=(g,h=240)=>g?`<img src="${esc(imgu(g))}" alt="" style="max-width:100%;max-height:${h}px;border-radius:12px;margin-top:10px" onerror="this.remove()">`:'';
+function timer(t0,dur,end){E=t0+dur*1000;const f=()=>{const l=(E-(Date.now()+off))/1000;$('tm').textContent=Math.max(0,Math.ceil(l));$('tb').style.width=Math.min(100,Math.max(0,l/dur*100))+'%';if(l<=0){clearInterval(T);end()}};f();T=setInterval(f,250)}
+function qView(q,dur,t0,total,pick){app.innerHTML=`<div class=row><span class=m>Soal ${q.no} dari ${total}</span><span class=big id=tm style="margin-left:auto"></span></div><div class=bar><i id=tb></i></div><div class=card><div class=big>${esc(q.q)}</div>${gimg(q.g)}</div><div class=opts>${q.o.map((o,x)=>o?`<button class="o o${x}" data-l="${L[x]}"><b>${L[x]}</b>${esc(o)}</button>`:'').join('')}</div><p id=msg class=m></p>`;
  let done=false;const send=async l=>{if(done)return;done=true;document.querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.l==l)b.classList.add('me')});try{await pick(l)}catch(e){if(!/Sudah|habis/.test(e.message))err(e)}};
  document.querySelectorAll('.o').forEach(b=>b.onclick=()=>send(b.dataset.l));timer(t0,dur,()=>send('-'))}
 function resView(r,mine,next){const s=r.st,n=s.n||1,ok=mine==r.k;app.innerHTML=`<div class=card><div class=big style="color:${ok?'var(--g)':'var(--r)'}">${mine=='-'?'Waktu habis':ok?'Benar!':'Belum tepat'}${r.poin!=null?' · +'+r.poin+' poin':''}</div><p>Jawaban benar: <b>${r.k}</b></p><p class=m>${esc(r.x||'')}</p></div><div class=card><b>Hasil kelas: ${s.benar} benar · ${s.salah} salah</b>${[...L].map(l=>`<div class=m>${l}${l==r.k?' (benar)':''} · ${s[l]||0} siswa</div><div class=bar><i style="width:${(s[l]||0)/n*100}%"></i></div>`).join('')}</div>${next?'<button id=nx style="width:100%">Lanjut</button>':''}`;if(next)$('nx').onclick=next}
@@ -30,7 +34,7 @@ async function board(end){stop();try{const j=await api('lb',{pid:S.pid});app.inn
 async function mandiri(){stop();if(S.i>=S.total)return board(true);
  try{const j=await api('q',{pid:S.pid,i:S.i});off=j.now-Date.now();
   qView(j.q,j.dur,j.t0,S.total,async l=>{let r;try{r=await api('ans',{pid:S.pid,i:S.i,j:l})}catch(e){if(/Sudah/.test(e.message)){S.i++;save();return mandiri()}throw e}resView(r,l,()=>{S.i++;save();mandiri()})})}catch(e){err(e)}}
-async function live(){clearTimeout(P);try{const j=await api('state',{pid:S.pid});off=j.now-Date.now();const k=j.phase+j.qi;if(k!=key){key=k;lview(j)}}catch(e){if(/gabung lagi|tidak dikenal/.test(e.message)){localStorage.removeItem('kuis');S={};return joinView('')}}P=setTimeout(live,2500)}
+async function live(){clearTimeout(P);try{const j=await api('state',{pid:S.pid});off=j.now-Date.now();if(j.phase=='question'&&j.dur)E=j.openAt+j.dur*1000;const k=j.phase+j.qi;if(k!=key){key=k;lview(j)}}catch(e){if(/gabung lagi|tidak dikenal/.test(e.message)){localStorage.removeItem('kuis');S={};return joinView('')}}P=setTimeout(live,2500)}
 function lview(j){clearInterval(T);
  if(j.phase=='question')qView(j.q,j.dur,j.openAt,j.total,async l=>{await api('ans',{pid:S.pid,j:l});$('msg').textContent=l=='-'?'Waktu habis':'Jawaban terkirim, menunggu hasil...'});
  else if(j.phase=='result')resView(j.res,j.res.j,null);
@@ -39,33 +43,65 @@ function lview(j){clearInterval(T);
 function joinView(k){app.innerHTML=`<h1>Kuis Diskon Detektif</h1><div class=card><input id=n placeholder="Nama lengkap" autocomplete=off><input id=k2 placeholder="Kelas, contoh X-1"><input id=c placeholder="Kode sesi" inputmode=numeric value="${esc(k)}"><button id=go style="width:100%">Gabung</button></div>`;
  $('go').onclick=async()=>{try{const j=await api('join',{nama:$('n').value,kelas:$('k2').value,kode:$('c').value});S={pid:j.pid,mode:j.mode,total:j.total,nama:j.nama,i:0};save();key='';j.mode=='live'?live():mandiri()}catch(e){err(e)}}}
 async function home(){const k=new URLSearchParams(location.search).get('kode')||'';if(S.pid){try{await api('lb',{pid:S.pid});return S.mode=='live'?live():mandiri()}catch(e){localStorage.removeItem('kuis');S={}}}joinView(k)}
-/* ===== DASHBOARD GURU: buka kuis.html#guru ===== */
+/* ===== GURU: alamat#guru | PROYEKTOR: alamat#layar ===== */
+const PH={idle:'Belum mulai',lobby:'Menunggu siswa',question:'Soal berjalan',result:'Hasil ditampilkan',board:'Klasemen ditampilkan',end:'Selesai'};
+const url=()=>location.origin+location.pathname,qr=(s,k)=>`<img alt="QR sesi" width=${s} height=${s} src="https://api.qrserver.com/v1/create-qr-code/?size=${s*2}x${s*2}&data=${encodeURIComponent(url()+'?kode='+k)}">`;
+const tick=()=>{clearInterval(T2);T2=setInterval(()=>{const e=$('pt');if(e)e.textContent=Math.max(0,Math.ceil((PE-Date.now())/1000))+' dtk'},500)};
+const bars=(c,t)=>{const n=Math.max(t.n,1);return c.o.map((o,x)=>o?`<div class=row style="margin:8px 0 2px"><b>${L[x]}${L[x]==c.k?' ✓':''}</b><span style="flex:4">${esc(o)}</span><span class=m>${t[L[x]]||0} siswa</span></div><div class=bar><i style="width:${(t[L[x]]||0)/n*100}%;${L[x]==c.k?'background:var(--g)':''}"></i></div>`:'').join('')};
 function csv(t){t=t.replace(/^\uFEFF/,'');const h=t.split(/\r?\n/)[0],d=h.includes('\t')?'\t':h.includes(',')?',':';',r=[];let row=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch=='"'){if(t[i+1]=='"'){c+='"';i++}else q=false}else c+=ch}else if(ch=='"')q=true;else if(ch==d){row.push(c);c=''}else if(ch=='\n'||ch=='\r'){if(ch=='\r'&&t[i+1]=='\n')i++;row.push(c);r.push(row);row=[];c=''}else c+=ch}row.push(c);r.push(row);return r.filter(x=>x.join('').trim())}
 function dlf(n,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+t],{type:'text/csv'}));a.download=n;a.click()}
-async function guru(){let pin=sessionStorage.pin||'';const A=(a,d)=>api(a,{pin,...d});
- const login=()=>{app.innerHTML=`<h1>Dashboard Guru</h1><div class=card><input id=pn type=password placeholder="PIN guru"><button id=ok style="width:100%">Masuk</button></div>`;$('ok').onclick=async()=>{pin=$('pn').value;try{await A('a_info');sessionStorage.pin=pin;dash()}catch(e){err(e)}}};
- try{await A('a_info');dash()}catch(e){login()}
- function dash(){app.className='wide';const go=async(a,d)=>{try{await A(a,d);poll()}catch(e){err(e)}};
-  app.innerHTML=`<h1>Dashboard Guru</h1>
-<div class=card><b>1. Sesi kuis</b> <span id=ns class=m></span><select id=md><option value=live>Serentak: guru mengatur soal</option><option value=mandiri>Mandiri: siswa jalan sendiri</option></select><button id=st style="width:100%">Mulai sesi baru</button><div id=sx></div></div>
-<div class=card id=ctl></div><div class=m id=jb></div>
-<div class=card><b>2. Soal</b><textarea id=ta rows=4 placeholder="Tempel soal (CSV atau salin dari Google Sheets), atau pilih file CSV"></textarea><input type=file id=fl accept=".csv,.txt"><div class=row><button id=up>Unggah soal</button><button class=s id=tp>Unduh template</button></div><p class=m>Kolom: pertanyaan, A, B, C, D, kunci (A-D), detik, poin, penjelasan. Unggahan baru menimpa soal lama.</p></div>
-<div class=card><b>3. Hasil</b><div class=row><button id=dl>Unduh rekap CSV</button><button class=d id=rs>Unduh, arsip, lalu hapus hasil</button><button class=d id=ds>Hapus soal</button></div></div>
-<div class=card><b>Klasemen sementara</b><div id=lbx></div></div>`;
-  $('st').onclick=()=>go('a_start',{mode:$('md').value});
-  $('fl').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(t=>$('ta').value=t)};
-  $('up').onclick=async()=>{const r=csv($('ta').value),h=/^pertanyaan/i.test((r[0]||[''])[0])?1:0,rows=r.slice(h),bad=[];rows.forEach((x,i)=>{if(!x[0]||!x[1]||!x[2]||!/^[ABCD]$/i.test((x[5]||'').trim()))bad.push(i+1+h)});if(!rows.length||bad.length)return alert('Baris bermasalah: '+(bad.join(', ')||'kosong'));await go('a_setsoal',{rows});alert(rows.length+' soal tersimpan')};
-  $('tp').onclick=()=>dlf('template-soal.csv','pertanyaan,A,B,C,D,kunci,detik,poin,penjelasan\n"Contoh soal, boleh memakai koma",Jawaban A,Jawaban B,Jawaban C,Jawaban D,B,30,100,Penjelasan singkat\n');
-  $('dl').onclick=async()=>{const j=await A('a_rekap');dlf('rekap-kuis-'+new Date().toISOString().slice(0,10)+'.csv',[j.head,...j.rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'))};
-  $('rs').onclick=async()=>{if(!confirm('Rekap akan diunduh, hasil diarsipkan ke tab baru di Google Sheet, lalu dikosongkan untuk kuis baru. Lanjut?'))return;await $('dl').onclick();await go('a_hapus',{what:'hasil',arsip:true})};
-  $('ds').onclick=()=>confirm('Hapus semua soal?')&&go('a_hapus',{what:'soal'});
-  const url=()=>location.origin+location.pathname,poll=async()=>{try{const j=await A('a_info'),s=j.st;$('ns').textContent='· '+j.total+' soal tersimpan';
-   $('sx').innerHTML=s.sesi?`<p>Kode sesi: <span class=big>${s.kode}</span> · ${s.mode=='live'?'Serentak':'Mandiri'} · ${j.peserta} peserta</p><img alt="QR sesi" width=180 height=180 src="https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=${encodeURIComponent(url()+'?kode='+s.kode)}"><p class=m>${url()}?kode=${s.kode}</p>`:'<p class=m>Belum ada sesi aktif.</p>';
-   const k=s.sesi+s.phase+s.qi+j.total;if($('ctl').dataset.k!=k){$('ctl').dataset.k=k;const last=s.qi+1>=j.total;$('ctl').innerHTML=s.sesi&&s.mode=='live'?`<b>Kontrol serentak</b> <span class=m>${s.phase} · soal ${Math.max(s.qi+1,0)} dari ${j.total}</span><div class=row><button id=nx>${last?'Selesai, tampilkan klasemen akhir':'Buka soal '+(s.qi+2)}</button><button class=s id=cl>Tutup dan tampilkan hasil</button><button class=s id=bd>Tampilkan klasemen</button></div>`:'';
-    if($('nx')){$('nx').onclick=()=>last?go('a_phase',{phase:'end'}):go('a_open',{i:s.qi+1});$('cl').onclick=()=>go('a_phase',{phase:'result'});$('bd').onclick=()=>go('a_phase',{phase:'board'})}}
-   $('jb').textContent=s.phase=='question'?j.jawab+' dari '+j.peserta+' siswa sudah menjawab':'';
-   $('lbx').innerHTML='<table>'+j.lb.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.nama)} <span class=m>${esc(r.kelas)}</span></td><td>${r.benar} benar, ${r.salah} salah</td><td><b>${r.poin}</b></td></tr>`).join('')+'</table>'}catch(e){}};
-  poll();T=setInterval(poll,3000)}}
-function route(){stop();app.className='';location.hash=='#guru'?guru():home()}
+const toCsv=a=>a.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+async function gate(next){let pin=sessionStorage.pin||'';const A=(a,d)=>api(a,{pin,...d});
+ const login=()=>{app.innerHTML=`<h1>Masuk Guru</h1><div class=card><input id=pn type=password placeholder="PIN guru"><button id=ok style="width:100%">Masuk</button></div>`;$('ok').onclick=async()=>{pin=$('pn').value;try{await A('a_info');sessionStorage.pin=pin;next(A)}catch(e){err(e)}}};
+ try{await A('a_info');next(A)}catch(e){login()}}
+function dash(A){app.className='wide';let Q=[],AN=null;const go=async(a,d)=>{try{await A(a,d);poll()}catch(e){err(e)}};
+ app.innerHTML=`<h1>Dashboard Guru</h1><p class=m><a id=lay target=_blank style="color:var(--a)">Buka layar proyektor (tab baru)</a></p>
+<div class=card><div class=two><div><b>1. Sesi kuis</b> <span id=ns class=m></span><select id=md><option value=live>Serentak: guru mengatur soal</option><option value=mandiri>Mandiri: siswa jalan sendiri</option></select><button id=st style="width:100%">Mulai sesi baru</button></div><div id=sx class=m>Belum ada sesi aktif.</div></div></div>
+<div class=card><b>2. Kontrol kuis</b> <span id=ph class=m></span><div class=row id=ctl style="margin:10px 0"></div><div id=pv></div></div>
+<div class=card><b>3. Soal</b><div id=sl></div><div class=row style="margin-top:10px"><button id=ad>Tambah soal</button><button class=s id=tp>Unduh template CSV</button></div>
+<details style="margin-top:10px"><summary class=m>Unggah banyak soal sekaligus (CSV)</summary><textarea id=ta rows=4 placeholder="Tempel CSV atau salin dari Google Sheets, atau pilih file"></textarea><input type=file id=fl accept=".csv,.txt"><button id=up style="width:100%">Unggah dan ganti semua soal</button><p class=m>Kolom: pertanyaan, A, B, C, D, kunci, detik, poin, penjelasan, gambar, tipe. Tipe pg (pilihan ganda) atau bs (benar/salah, kunci ditulis Benar atau Salah).</p></details></div>
+<div class=card><b>4. Hasil</b><div class=row style="margin-top:10px"><button id=dl>Unduh rekap CSV</button><button class=d id=rs>Unduh, arsip, lalu hapus hasil</button><button class=d id=ds>Hapus semua soal</button></div></div>
+<div class=card><b>5. Analisis soal</b> <div class=row style="margin:10px 0"><button class=s id=an>Tampilkan analisis</button><button class=s id=anl>Unduh analisis CSV</button></div><div id=ax style="overflow-x:auto"></div></div>
+<div class=card><b>Klasemen sementara</b><div id=lbx></div></div>
+<div id=ed style="display:none;position:fixed;inset:0;background:#000b;overflow:auto;padding:16px"><div class=card style="max-width:640px;margin:0 auto"><b>Edit soal</b><textarea id=f_q rows=3 placeholder="Pertanyaan"></textarea><select id=f_t><option value=pg>Pilihan ganda (A-D)</option><option value=bs>Benar / Salah</option></select><div id=eo><input id=f_a placeholder="Opsi A"><input id=f_b placeholder="Opsi B"><input id=f_c placeholder="Opsi C (boleh kosong)"><input id=f_d placeholder="Opsi D (boleh kosong)"></div><label class=m>Kunci jawaban</label><select id=f_k></select><div class=row><input id=f_s type=number placeholder="Detik"><input id=f_p type=number placeholder="Poin"></div><input id=f_g placeholder="Gambar (opsional): tautan Google Drive atau img/nama.png"><textarea id=f_x rows=2 placeholder="Penjelasan (muncul setelah soal ditutup)"></textarea><div class=row><button id=es>Simpan</button><button class=s id=ec>Batal</button></div></div></div>`;
+ $('lay').href=url()+'#layar';
+ const f=i=>$('f_'+i),keys=t=>t=='bs'?[['A','Benar'],['B','Salah']]:[['A','A'],['B','B'],['C','C'],['D','D']];
+ const fillK=(t,v)=>{f('k').innerHTML=keys(t).map(x=>`<option value=${x[0]}>${x[1]}</option>`).join('');f('k').value=v;$('eo').style.display=t=='bs'?'none':'block'};
+ const row=x=>[x.q,x.o[0],x.o[1],x.o[2],x.o[3],x.k,x.d,x.p,x.x,x.g,x.t];
+ const renderQ=()=>{$('sl').innerHTML=Q.length?Q.map((x,i)=>`<div class=it><span class=m>${i+1}</span><span class=q>${esc(x.q.slice(0,80))} <span class=m>${x.t=='bs'?'[B/S]':'[PG]'}${x.g?' [gambar]':''} · ${x.d} dtk · kunci ${x.t=='bs'?(x.k=='A'?'Benar':'Salah'):x.k}</span></span><button class=s data-a=e data-i=${i}>Edit</button><button class=s data-a=c data-i=${i}>Duplikat</button><button class=s data-a=u data-i=${i}>Naik</button><button class=s data-a=w data-i=${i}>Turun</button><button class=d data-a=x data-i=${i}>Hapus</button></div>`).join(''):'<p class=m>Belum ada soal. Tambah satu per satu atau unggah CSV.</p>'};
+ const loadQ=async()=>{try{Q=(await A('a_soal')).soal;renderQ()}catch(e){}};
+ const saveQ=async()=>{let ok=true;try{await A('a_setsoal',{rows:Q.map(row)})}catch(e){ok=false;err(e)}await loadQ();poll();return ok};
+ let EI=-1;const openEd=i=>{EI=i;const x=i<0?{q:'',o:['','','',''],k:'A',d:30,p:100,x:'',g:'',t:'pg'}:Q[i];f('q').value=x.q;f('t').value=x.t;['a','b','c','d'].forEach((l,n)=>f(l).value=x.o[n]||'');fillK(x.t,x.k);f('s').value=x.d;f('p').value=x.p;f('g').value=x.g;f('x').value=x.x;$('ed').style.display='block'};
+ f('t').onchange=()=>fillK(f('t').value,'A');$('ec').onclick=()=>$('ed').style.display='none';$('ad').onclick=()=>openEd(-1);
+ $('es').onclick=async()=>{const t=f('t').value,o=['a','b','c','d'].map(l=>f(l).value.trim()),k=f('k').value;if(!f('q').value.trim())return alert('Pertanyaan wajib diisi');if(t=='pg'&&(!o[0]||!o[1]||!o['ABCD'.indexOf(k)]))return alert('Isi minimal opsi A dan B, serta opsi yang menjadi kunci');
+  const x={q:f('q').value.trim(),t,o:t=='bs'?['Benar','Salah','','']:o,k,d:+f('s').value||30,p:+f('p').value||100,x:f('x').value.trim(),g:f('g').value.trim()},old=JSON.stringify(Q);if(EI<0)Q.push(x);else Q[EI]=x;if(await saveQ())$('ed').style.display='none'};
+ $('sl').onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i,a=b.dataset.a;if(a=='e')return openEd(i);if(a=='c')Q.splice(i+1,0,JSON.parse(JSON.stringify(Q[i])));else if(a=='u'&&i>0)[Q[i-1],Q[i]]=[Q[i],Q[i-1]];else if(a=='w'&&i<Q.length-1)[Q[i+1],Q[i]]=[Q[i],Q[i+1]];else if(a=='x'){if(!confirm('Hapus soal ini?'))return;Q.splice(i,1)}else return;saveQ()};
+ const W=/^(benar|salah|true|false)$/i,norm=x=>{const k=(x[5]||'').trim(),bs=(x[10]||'').trim().toLowerCase()=='bs'||W.test(k);if(!(x[0]||'').trim())return null;if(bs){if(!W.test(k))return null;return[x[0],'Benar','Salah','','',/^(benar|true)$/i.test(k)?'A':'B',x[6],x[7],x[8]||'',x[9]||'','bs']}if(!x[1]||!x[2]||!/^[ABCD]$/i.test(k))return null;return[x[0],x[1],x[2],x[3]||'',x[4]||'',k.toUpperCase(),x[6],x[7],x[8]||'',x[9]||'','pg']};
+ $('fl').onchange=e=>{const f1=e.target.files[0];if(f1)f1.text().then(t=>$('ta').value=t)};
+ $('up').onclick=async()=>{const r=csv($('ta').value),h=/^pertanyaan/i.test((r[0]||[''])[0])?1:0,n=r.slice(h).map(norm),bad=[];n.forEach((x,i)=>{if(!x)bad.push(i+1+h)});if(!n.length||bad.length)return alert('Baris bermasalah: '+(bad.join(', ')||'kosong'));try{await A('a_setsoal',{rows:n});alert(n.length+' soal tersimpan');await loadQ();poll()}catch(e){err(e)}};
+ $('tp').onclick=()=>dlf('template-soal.csv','pertanyaan,A,B,C,D,kunci,detik,poin,penjelasan,gambar,tipe\n"Contoh pilihan ganda, boleh memakai koma",Jawaban A,Jawaban B,Jawaban C,Jawaban D,B,30,100,Penjelasan singkat,,pg\nDiskon 50% + 20% sama dengan diskon 70%.,,,,,Salah,20,100,Diskon kedua dihitung dari sisa harga.,,bs\n');
+ $('dl').onclick=async()=>{const j=await A('a_rekap');dlf('rekap-kuis-'+new Date().toISOString().slice(0,10)+'.csv',toCsv([j.head,...j.rows]))};
+ $('rs').onclick=async()=>{if(!confirm('Rekap akan diunduh, hasil diarsipkan ke tab baru di Google Sheet, lalu dikosongkan untuk kuis baru. Lanjut?'))return;await $('dl').onclick();await go('a_hapus',{what:'hasil',arsip:true})};
+ $('ds').onclick=async()=>{if(confirm('Hapus semua soal?')){await go('a_hapus',{what:'soal'});loadQ()}};
+ $('an').onclick=async()=>{try{AN=await A('a_analisis');$('ax').innerHTML='<table><tr><th>No</th><th>Soal</th><th>Kunci</th><th>Dijawab</th><th>% benar</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Pengecoh terbanyak</th></tr>'+AN.rows.map(r=>`<tr><td>${r[0]}</td><td>${esc(String(r[1]).slice(0,60))}</td><td>${r[2]}</td><td>${r[3]}</td><td style="color:${r[4]<50?'var(--r)':'var(--g)'}"><b>${r[4]}%</b></td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[9]}</td></tr>`).join('')+'</table><p class=m>Dihitung dari semua jawaban yang masih tersimpan di Sheet.</p>'}catch(e){err(e)}};
+ $('anl').onclick=async()=>{if(!AN)await $('an').onclick();if(AN)dlf('analisis-soal.csv',toCsv([['No','Soal','Kunci','Dijawab','Persen benar','A','B','C','D','Pengecoh terbanyak'],...AN.rows]))};
+ $('st').onclick=()=>go('a_start',{mode:$('md').value});
+ const poll=async()=>{try{const j=await A('a_info'),s=j.st,c=j.cur;PE=c?c.end-(j.now-Date.now()):0;
+  $('ns').textContent='· '+j.total+' soal';$('ph').textContent='· '+PH[s.phase]+(s.qi>=0?' · soal '+(s.qi+1)+' dari '+j.total:'');
+  $('sx').innerHTML=s.sesi?`<div class=row>${qr(130,s.kode)}<div><div class=m>Kode sesi</div><div class=big>${s.kode}</div><div class=m>${s.mode=='live'?'Serentak':'Mandiri'} · ${j.peserta} peserta</div></div></div>`:'Belum ada sesi aktif.';
+  const k=s.sesi+s.phase+s.qi+j.total;if($('ctl').dataset.k!=k){$('ctl').dataset.k=k;const last=s.qi+1>=j.total;
+   $('ctl').innerHTML=s.sesi&&s.mode=='live'?`<button id=nx>${last?'Selesai: klasemen akhir':'Buka soal '+(s.qi+2)}</button><button class=s id=ex>+10 detik</button><button class=s id=cl>Tutup / lewati soal</button><button class=s id=bd>Klasemen</button>`:(s.sesi?'<span class=m>Mode mandiri: siswa berjalan sendiri.</span>':'<span class=m>Mulai sesi dulu.</span>');
+   if($('nx')){$('nx').onclick=()=>last?go('a_phase',{phase:'end'}):go('a_open',{i:s.qi+1});$('ex').onclick=()=>go('a_extend');$('cl').onclick=()=>go('a_phase',{phase:'result'});$('bd').onclick=()=>go('a_phase',{phase:'board'})}}
+  let h='';if(s.sesi&&s.mode=='live'){if(c&&(s.phase=='question'||s.phase=='result'))h+=`<div class=card style="margin:0 0 8px"><div class=row><span class=m>Tampil di layar siswa · soal ${c.no} · ${c.t=='bs'?'Benar/Salah':'Pilihan ganda'}</span>${s.phase=='question'?'<b id=pt style="margin-left:auto"></b>':''}</div><div class=big>${esc(c.q)}</div>${gimg(c.g,160)}${bars(c,c.st)}<p class=m>${j.jawab} dari ${j.peserta} siswa sudah menjawab${s.phase=='result'?' · '+esc(c.x):''}</p></div>`;
+   if(j.nxt)h+=`<div class=card style="margin:0"><div class=m>Berikutnya: soal ${j.nxt.no} · kunci ${j.nxt.t=='bs'?(j.nxt.k=='A'?'Benar':'Salah'):j.nxt.k}</div>${esc(j.nxt.q)}</div>`}
+  $('pv').innerHTML=h;
+  $('lbx').innerHTML='<table>'+j.lb.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.nama)} <span class=m>${esc(r.kelas)}</span></td><td>${r.benar} benar, ${r.salah} salah</td><td><b>${r.poin}</b></td></tr>`).join('')+'</table>'}catch(e){}};
+ loadQ();poll();T=setInterval(poll,3000);tick()}
+function lay(A){app.className='wide';document.body.style.fontSize='22px';const poll=async()=>{try{const j=await A('a_info'),s=j.st,c=j.cur;PE=c?c.end-(j.now-Date.now()):0;let h='';
+ if(!s.sesi||s.phase=='lobby')h=`<div style="text-align:center"><h1 style="font-size:44px">Kuis Diskon Detektif</h1>${s.sesi?`<p>Scan QR atau buka <b>${url()}</b></p>${qr(280,s.kode)}<div class=big style="font-size:64px">Kode ${s.kode}</div><p class=big>${j.peserta} siswa bergabung</p>`:'<p>Belum ada sesi aktif.</p>'}</div>`;
+ else if(s.phase=='board'||s.phase=='end')h=`<h1 style="font-size:44px">${s.phase=='end'?'Klasemen Akhir':'Klasemen'}</h1><div class=card><table style="font-size:28px">${j.lb.map((r,i)=>`<tr><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${esc(r.nama)} <span class=m>${esc(r.kelas)}</span></td><td>${r.benar} benar</td><td><b>${r.poin}</b></td></tr>`).join('')}</table></div>`;
+ else if(c){const res=s.phase=='result',t=c.st;h=`<div class=row><span class=m>Soal ${c.no} dari ${j.total}</span>${res?'':'<span class=big id=pt style="margin-left:auto;font-size:40px"></span>'}</div><div class=card><div class=big style="font-size:34px">${esc(c.q)}</div>${gimg(c.g,340)}</div><div class=opts>${c.o.map((o,x)=>o?`<div class="o o${x}" style="font-size:28px;${res&&L[x]!=c.k?'opacity:.4;':''}${res&&L[x]==c.k?'outline:6px solid #fff;':''}"><b>${L[x]}</b><span style="flex:1">${esc(o)}</span>${res?`<span>${t[L[x]]||0}</span>`:''}</div>`:'').join('')}</div>${res?`<p class=big>${t.benar} benar · ${t.salah} salah</p><p class=m>${esc(c.x)}</p>`:`<p class=m>${j.jawab} dari ${j.peserta} sudah menjawab</p>`}`}
+ app.innerHTML=h}catch(e){}};poll();T=setInterval(poll,2000);tick()}
+function route(){stop();document.body.style.fontSize='';app.className='';const h=location.hash;h=='#guru'?gate(dash):h=='#layar'?gate(lay):home()}
 window.onhashchange=route;route();
 </script></body></html>
