@@ -449,6 +449,8 @@
                 id: 1,
                 title: "Diskon Bertingkat",
                 points: 20,
+                imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80",
+                imageAlt: "Sepatu Sneaker Diskon",
                 description: "Sebuah sepatu seharga <b>Rp200.000</b> dijual di dua toko berbeda. Toko A menawarkan diskon bertingkat <b>50% + 20%</b>, sedangkan Toko B menawarkan diskon tunggal <b>65%</b>. Mana yang memberikan harga akhir lebih murah?",
                 options: [
                     { id: 'A', name: "Toko A", details: ["Harga Awal: Rp200.000", "Promo: Diskon 50% + 20%"] },
@@ -488,6 +490,8 @@
                 id: 2,
                 title: "Persen Besar Belum Tentu Untung",
                 points: 20,
+                imageUrl: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80",
+                imageAlt: "Jaket Trendy",
                 description: "Dua toko menjual jaket dengan harga dasar berbeda. Toko A menjual jaket seharga <b>Rp250.000</b> dengan <b>diskon 40%</b>. Toko B menjual jaket sejenis seharga <b>Rp180.000</b> dengan <b>diskon 20%</b>. Mana yang harga bayarnya lebih murah?",
                 options: [
                     { id: 'A', name: "Toko A", details: ["Harga Awal: Rp250.000", "Promo: Diskon 40%"] },
@@ -526,6 +530,8 @@
                 id: 3,
                 title: "Jebakan Maksimal Nilai Diskon",
                 points: 20,
+                imageUrl: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80",
+                imageAlt: "Tas Ransel Sekolah",
                 description: "Kamu akan berbelanja tas sekolah senilai <b>Rp100.000</b>. Toko A menawarkan <b>Diskon 50% (Maksimal Potongan Rp25.000)</b>. Toko B menawarkan <b>Diskon 30% Tanpa Batas</b>. Toko mana yang bayarnya lebih murah?",
                 options: [
                     { id: 'A', name: "Toko A", details: ["Harga Awal: Rp100.000", "Promo: Diskon 50% (Maks Rp25.000)"] },
@@ -565,6 +571,8 @@
                 id: 4,
                 title: "Syarat Minimal Pembelian Food Delivery",
                 points: 20,
+                imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80",
+                imageAlt: "Makanan Pesan Online",
                 description: "Kamu memesan makanan online. Kamu punya dua opsi voucher:<br>• <b>Voucher A:</b> Diskon 40% (Min. Belanja Rp120.000, Maks Potongan Rp50.000)<br>• <b>Voucher B:</b> Diskon 25% (Min. Belanja Rp60.000, Tanpa Maksimal)<br><br>Hitung harga akhir untuk 3 skenario total belanjaan berikut, dan tebak voucher mana yang lebih menguntungkan pada skenario <b>Rp150.000</b>!",
                 options: [
                     { id: 'A', name: "Voucher A Lebih Hemat", details: ["Fokus pada skenario belanja Rp150.000"] },
@@ -579,15 +587,10 @@
                     { key: 'scen250B', label: 'Belanja Rp250.000 - Bayar Pakai Voucher B (Rp):' }
                 ],
                 calcLogic: (inputs) => {
-                    // Scenario 1: Rp100.000 -> A: 100.000 (not active min 120k), B: 100.000 - 25% = 75.000
                     const correct100A = 100000;
                     const correct100B = 75000;
-
-                    // Scenario 2: Rp150.000 -> A: 150.000 - Math.min(60k, 50k) = 100.000, B: 150.000 - 37.500 = 112.500 (A cheaper)
                     const correct150A = 100000;
                     const correct150B = 112500;
-
-                    // Scenario 3: Rp250.000 -> A: 250.000 - 50k = 200.000, B: 250.000 - 62.500 = 187.500 (B cheaper)
                     const correct250A = 200000;
                     const correct250B = 187500;
 
@@ -608,7 +611,7 @@
                     );
 
                     return {
-                        cheaper: 'A', // For 150.000 scenario, Voucher A is cheaper (100.000 vs 112.500)
+                        cheaper: 'A',
                         isMathCorrect: isMathCorrect,
                         breakdown: `
                             • <b>Skenario 1 (Belanja Rp100.000):</b><br>
@@ -629,6 +632,8 @@
                 id: 5,
                 title: "Perbandingan Metode Pembayaran",
                 points: 20,
+                imageUrl: "https://images.unsplash.com/photo-1556742049-0a670f4a4587?auto=format&fit=crop&w=600&q=80",
+                imageAlt: "Pembayaran E-Wallet dan Kartu",
                 description: "Sebuah barang seharga <b>Rp150.000</b> dengan ongkos kirim <b>Rp10.000</b> menawarkan promo berdasarkan metode pembayaran:<br>• <b>Opsi A (E-Wallet):</b> Cashback 10% berupa koin + Gratis Ongkir Rp10.000.<br>• <b>Opsi B (Kartu Kredit / Paylater):</b> Diskon 15%, tapi ada Biaya Layanan Rp5.000 & Ongkir Rp10.000 tetap bayar.<br>Mana opsi yang beban biaya bersihnya lebih murah?",
                 options: [
                     { id: 'A', name: "Opsi A (E-Wallet)", details: ["Biaya Bersih setelah memperhitungkan Cashback Koin & Gratis Ongkir"] },
@@ -639,9 +644,7 @@
                     { key: 'priceB', label: 'Total Bayar Opsi B (Rp)' }
                 ],
                 calcLogic: (inputs) => {
-                    // Opsi A: Barang Rp150.000 + Ongkir Rp10.000 - Cashback Koin Rp15.000 - Gratis Ongkir Rp10.000 = Rp135.000
                     const priceA = 135000;
-                    // Opsi B: Barang (150k - 15% = 127.500) + Admin Rp5.000 + Ongkir Rp10.000 = Rp142.500
                     const priceB = 142500;
 
                     const userA = parseNumericInput(inputs.priceA);
@@ -672,6 +675,8 @@
                 id: 6,
                 title: "MISI BONUS: Pembelian Laptop Sekolah",
                 points: 20,
+                imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=600&q=80",
+                imageAlt: "Laptop Sekolah",
                 description: "Kamu akan membeli laptop seharga <b>Rp6.000.000</b> untuk keperluan sekolah. Ada 4 opsi pembayaran:<br>• <b>Opsi A (Tunai):</b> Diskon 2%<br>• <b>Opsi B (Kartu Debit):</b> Diskon Rp100.000<br>• <b>Opsi C (Kartu Kredit ABC):</b> Diskon Rp200.000 + Admin 3% dari total setelah diskon<br>• <b>Opsi D (Kartu Kredit XYZ Cicilan 12 Bulan):</b> Diskon Rp500.000, Bunga Flat 1%/bulan dari harga setelah diskon, ditambah Admin 3% dari total yang dibayar.<br>Mana opsi yang total pengeluarannya paling murah?",
                 options: [
                     { id: 'A', name: "Opsi A (Tunai)", details: ["Diskon 2%"] },
@@ -686,16 +691,9 @@
                     { key: 'priceD', label: 'Total Opsi D - KK XYZ (Rp)' }
                 ],
                 calcLogic: (inputs) => {
-                    // Opsi A: 6.000.000 * 0.98 = 5.880.000
                     const priceA = 5880000;
-                    // Opsi B: 6.000.000 - 100.000 = 5.900.000
                     const priceB = 5900000;
-                    // Opsi C: (6.000.000 - 200.000) * 1.03 = 5.800.000 * 1.03 = 5.974.000
                     const priceC = 5974000;
-                    // Opsi D: 
-                    // 1. Diskon: 6.000.000 - 500.000 = 5.500.000
-                    // 2. Bunga 12 bulan (1% flat per bulan = 12% total): 5.500.000 * 1.12 = 6.160.000
-                    // 3. Admin 3% dari nilai dibayar: 6.160.000 * 1.03 = 6.344.800
                     const priceD = 6344800;
 
                     const uA = parseNumericInput(inputs.priceA);
@@ -806,7 +804,16 @@
             document.getElementById('case-number-badge').innerText = `Kasus ${index + 1} dari ${casesData.length}`;
             document.getElementById('case-title').innerText = caseData.title;
             document.getElementById('case-points').innerText = `${caseData.points} Pts`;
-            document.getElementById('case-description').innerHTML = caseData.description;
+            
+            // Render Description with Realistic Image
+            document.getElementById('case-description').innerHTML = `
+                <div class="mb-4 overflow-hidden rounded-xl border border-slate-700 max-h-56 bg-slate-900 flex justify-center items-center">
+                    <img src="${caseData.imageUrl}" alt="${caseData.imageAlt}" onerror="this.onerror=null;this.src='https://placehold.co/600x300/1e293b/f59e0b?text=Foto+Kasus+Belanja';" class="w-full h-48 md:h-56 object-cover hover:scale-105 transition duration-300">
+                </div>
+                <div>
+                    ${caseData.description}
+                </div>
+            `;
 
             // Reset Tahap 1 Lock Button
             const lockBtn = document.getElementById('btn-lock-guess');
