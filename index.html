@@ -59,7 +59,9 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px so
         </div>
         <button class="bg-yellow-500 hover:bg-yellow-400 text-black px-12 py-4 rounded-full font-bold text-2xl shadow-lg transform transition hover:scale-105 mb-10" onclick="startGame()">Mulai Main</button>
     </div>
-
+    <div id="joy" style="display:none;position:absolute;left:24px;bottom:28px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.4);pointer-events:auto;touch-action:none">
+    <div id="joyk" style="position:absolute;left:40px;top:40px;width:40px;height:40px;border-radius:50%;background:rgba(245,158,11,.9)"></div>
+    </div>
     <div id="quiz-modal">
         <div id="quiz-modal-content"></div>
         <button id="flee-btn" class="s" style="padding:12px 24px; border-radius:30px; font-size:18px;" onclick="fleeQuiz()">🏃 Kabur Dulu! (Tutup)</button>
@@ -106,7 +108,15 @@ async function mandiri(){
             $('flee-btn').style.display = 'none'; // Gak bisa kabur kalau udah jawab
             let r;
             try{r=await api('ans',{pid:S.pid,i:S.i,j:l})}
-            catch(e){if(/Sudah/.test(e.message)){S.i++;save();return mandiri()}throw e}
+            catch(e){
+                  if(/Sudah/.test(e.message)){S.i++;save();return mandiri()}
+                  if(/habis/.test(e.message)){
+                    S.i++;save();
+                    $('quiz-modal').style.display='none';
+                    if(activeBox){activeBox.active=false;scene.remove(activeBox.mesh)}
+                    gameActive=true;return;
+                  }
+                  throw e}
             resView(r,l,()=>{
                 S.i++;save();
                 $('quiz-modal').style.display = 'none';
@@ -192,6 +202,19 @@ let bots = [];
 let questionBoxes = [];
 let gameActive = false, inMenu = true, activeBox = null;
 const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+let joy={x:0,y:0};
+const isTouch='ontouchstart' in window||navigator.maxTouchPoints>0;
+function initJoystick(){
+  const el=$('joy'),k=$('joyk'),R=40;let id=null;
+  const mv=e=>{const r=el.getBoundingClientRect();
+    let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+    const d=Math.hypot(dx,dy);if(d>R){dx*=R/d;dy*=R/d}
+    joy.x=dx/R;joy.y=dy/R;k.style.transform=`translate(${dx}px,${dy}px)`};
+  const end=()=>{id=null;joy.x=joy.y=0;k.style.transform='translate(0,0)'};
+  el.addEventListener('pointerdown',e=>{id=e.pointerId;el.setPointerCapture(id);mv(e)});
+  el.addEventListener('pointermove',e=>{if(e.pointerId===id)mv(e)});
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+}    
 let isMouseDown = false, previousMousePosition = { x: 0, y: 0 }, cameraAngle = { theta: 0, phi: Math.PI / 3 }, cameraRadius = 20;
 
 const skins = [
@@ -236,6 +259,7 @@ function init3D() {
     rendererCanvas.style.top = '0';
     rendererCanvas.style.left = '0';
     rendererCanvas.style.zIndex = '1';
+    rendererCanvas.style.touchAction = 'none';
     document.body.appendChild(rendererCanvas);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -275,12 +299,13 @@ function init3D() {
     rendererCanvas.addEventListener('mouseup', () => isMouseDown = false);
     rendererCanvas.addEventListener('mousemove', (e) => { if (isMouseDown && gameActive) moveCam(e.movementX, e.movementY); });
     
-    rendererCanvas.addEventListener('touchstart', (e) => { isMouseDown = true; previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, {passive: false});
+    rendererCanvas.addEventListener('touchstart', (e) => { isMouseDown = true; const t=e.changedTouches[0]; previousMousePosition = { x: t.clientX, y: t.clientY }; }, {passive: false});
     rendererCanvas.addEventListener('touchend', () => isMouseDown = false);
     rendererCanvas.addEventListener('touchmove', (e) => {
-        if(isMouseDown && gameActive) { moveCam(e.touches[0].clientX - previousMousePosition.x, e.touches[0].clientY - previousMousePosition.y); previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+        if(isMouseDown && gameActive) { const t=e.changedTouches[0]; moveCam(t.clientX - previousMousePosition.x, t.clientY - previousMousePosition.y); previousMousePosition = { x: t.clientX, y: t.clientY }; }
     }, {passive: false});
 
+    initJoystick();
     animate();
 }
 
@@ -412,6 +437,7 @@ function updatePlayer() {
     if (keys.s || keys.ArrowDown) { moveDir.sub(frontVec); isMoving = true; }
     if (keys.a || keys.ArrowLeft) { moveDir.sub(rightVec); isMoving = true; } // Fix Arah Kiri
     if (keys.d || keys.ArrowRight) { moveDir.add(rightVec); isMoving = true; } // Fix Arah Kanan
+    if(Math.abs(joy.x)>0.15||Math.abs(joy.y)>0.15){moveDir.addScaledVector(frontVec,-joy.y);moveDir.addScaledVector(rightVec,joy.x);isMoving=true;}
 
     if (isMoving) {
         moveDir.normalize(); player.group.position.addScaledVector(moveDir, moveSpeed);
@@ -451,6 +477,7 @@ function updateBots() {
 }
 
 function triggerQuiz(qb) {
+    joy.x=joy.y=0;
     if (S.mode == 'live') {
         const frontVec = new THREE.Vector3(-Math.sin(player.group.rotation.y), 0, -Math.cos(player.group.rotation.y));
         player.group.position.addScaledVector(frontVec, -6);
@@ -491,9 +518,11 @@ window.startGame = function() {
     $('controls-hint').style.display = 'block';
     inMenu = false; gameActive = true; cameraAngle.theta = 0; cameraAngle.phi = Math.PI / 3;
     if (S.mode == 'live') live();
+    if(isTouch){ $('joy').style.display='block'; $('controls-hint').style.display='none'; }
 };
 
 window.fleeQuiz = function() {
+    joy.x=joy.y=0;
     $('quiz-modal').style.display = 'none';
     if(player) {
         const frontVec = new THREE.Vector3(-Math.sin(player.group.rotation.y), 0, -Math.cos(player.group.rotation.y));
