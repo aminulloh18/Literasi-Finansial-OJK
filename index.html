@@ -1,8 +1,15 @@
-<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kuis Diskon Detektif</title>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Kuis Diskon Detektif 3D</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 :root{--bg:#0F172A;--c:#1E293B;--t:#F8FAFC;--m:#94A3B8;--a:#F59E0B;--g:#10B981;--r:#F43F5E}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:16px/1.45 system-ui,sans-serif}
-#app{max-width:640px;margin:0 auto;padding:16px}#app.wide{max-width:1000px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:16px/1.45 system-ui,sans-serif; overflow-x:hidden;}
+#app{max-width:640px;margin:0 auto;padding:16px; position:relative; z-index:10;}#app.wide{max-width:1000px}
 .card{background:var(--c);border:2px solid #334155;border-radius:16px;padding:18px;margin:12px 0}
 h1,h2{margin:.2em 0;color:var(--a)}
 input,select,textarea{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:2px solid #334155;background:var(--bg);color:var(--t);font:inherit}
@@ -15,35 +22,490 @@ button.s{background:#334155;color:var(--t)}button.d{background:var(--r);color:#f
 .two{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start}@media(max-width:600px){.two{grid-template-columns:1fr}}
 .it{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0;border-bottom:1px solid #334155}.it button{padding:6px 10px}.it .q{flex:1;min-width:180px}
 table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #334155;text-align:left}
-</style></head><body><main id="app"></main>
+
+/* 3D UI Overlay Styles */
+#game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; display: none; }
+#start-screen { background: rgba(15, 23, 42, 0.85); color: white; position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; align-items: center; pointer-events: auto; padding: 40px 20px; }
+.char-selector { display: flex; align-items: center; gap: 20px; background: rgba(0,0,0,0.5); padding: 15px 30px; border-radius: 50px; margin-bottom: 20vh; }
+.char-btn { background: #F59E0B; color: black; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; }
+.controls-hint { position: absolute; bottom: 20px; right: 20px; background: rgba(0, 0, 0, 0.7); color: white; padding: 10px; border-radius: 10px; text-align: right; pointer-events: auto; }
+#quiz-modal { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); display: none; align-items: center; justify-content: center; padding: 16px; pointer-events: auto; z-index: 100; }
+#quiz-modal-content { width: 100%; max-width: 640px; }
+#flee-btn { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
+</style>
+</head>
+<body>
+
+<!-- UI Asli untuk Guru, Layar, dan Join -->
+<main id="app"></main>
+
+<!-- UI Lapisan 3D (Hanya untuk Siswa setelah Join) -->
+<div id="game-ui">
+    <div class="controls-hint" id="controls-hint" style="display: none;">
+        <b>WASD</b> / <b>Panah</b> : Bergerak<br>
+        <b>Mouse/Geser</b> : Kamera<br>
+        Cari Papan Soal!
+    </div>
+    
+    <div id="start-screen">
+        <div class="text-center mt-10">
+            <h1 class="text-5xl font-extrabold text-yellow-400 mb-2 drop-shadow-lg">Diskon Detektif 3D</h1>
+            <p class="text-xl text-gray-200">Pilih Karakter & Mulai Eksplorasi Desa!</p>
+        </div>
+        <div class="char-selector shadow-xl">
+            <button class="char-btn" onclick="changeSkin(-1)">&lt;</button>
+            <div id="skin-name" class="text-2xl font-bold w-40 text-center">Warga</div>
+            <button class="char-btn" onclick="changeSkin(1)">&gt;</button>
+        </div>
+        <button class="bg-yellow-500 hover:bg-yellow-400 text-black px-12 py-4 rounded-full font-bold text-2xl shadow-lg transform transition hover:scale-105 mb-10" onclick="startGame()">Mulai Main</button>
+    </div>
+
+    <div id="quiz-modal">
+        <div id="quiz-modal-content"></div>
+        <button id="flee-btn" class="s" style="padding:12px 24px; border-radius:30px; font-size:18px;" onclick="fleeQuiz()">🏃 Kabur Dulu! (Tutup)</button>
+    </div>
+</div>
+
 <script>
+// ==========================================
+// 1. SISTEM BACKEND GOOGLE SCRIPT & UTILS
+// ==========================================
 const API='https://script.google.com/macros/s/AKfycbxdp8xZAHlhheCWztk_KYXrXqH0LdNsNKMMcHRUjpSX0qzq6hXI_842p3OjJqfQfR_2rw/exec';
-const $=id=>document.getElementById(id),app=$('app'),L='ABCD';
+const $=id=>document.getElementById(id),L='ABCD';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function api(a,d={}){const r=await fetch(API,{method:'POST',body:JSON.stringify({a,...d})});const j=await r.json();if(!j.ok)throw new Error(j.err);return j}
 let S=JSON.parse(localStorage.getItem('kuis')||'{}'),T=null,T2=null,P=null,off=0,key='',E=0,PE=0;
+let target=$('app'); // Dynamic target (bisa nembak ke #app atau ke #quiz-modal-content)
+
 const save=()=>localStorage.setItem('kuis',JSON.stringify(S)),err=e=>alert(e.message||e),stop=()=>{clearInterval(T);clearInterval(T2);clearTimeout(P)};
 const imgu=u=>{const m=u.match(/\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/);return/drive\.google\.com/.test(u)&&m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000':u};
 const gimg=(g,h=240)=>g?`<img src="${esc(imgu(g))}" alt="" style="max-width:100%;max-height:${h}px;border-radius:12px;margin-top:10px" onerror="this.remove()">`:'';
-function timer(t0,dur,end){E=t0+dur*1000;const f=()=>{const l=(E-(Date.now()+off))/1000;$('tm').textContent=Math.max(0,Math.ceil(l));$('tb').style.width=Math.min(100,Math.max(0,l/dur*100))+'%';if(l<=0){clearInterval(T);end()}};f();T=setInterval(f,250)}
-function qView(q,dur,t0,total,pick){app.innerHTML=`<div class=row><span class=m>Soal ${q.no} dari ${total}</span><span class=big id=tm style="margin-left:auto"></span></div><div class=bar><i id=tb></i></div><div class=card><div class=big>${esc(q.q)}</div>${gimg(q.g)}</div><div class=opts>${q.o.map((o,x)=>o?`<button class="o o${x}" data-l="${L[x]}"><b>${L[x]}</b>${esc(o)}</button>`:'').join('')}</div><p id=msg class=m></p>`;
+
+function timer(t0,dur,end){E=t0+dur*1000;const f=()=>{const l=(E-(Date.now()+off))/1000;const tm=$('tm'),tb=$('tb');if(tm)tm.textContent=Math.max(0,Math.ceil(l));if(tb)tb.style.width=Math.min(100,Math.max(0,l/dur*100))+'%';if(l<=0){clearInterval(T);end()}};f();T=setInterval(f,250)}
+
+// Fungsi view disesuaikan untuk nembak ke 'target'
+function qView(q,dur,t0,total,pick){target.innerHTML=`<div class=row><span class=m>Soal ${q.no} dari ${total}</span><span class=big id=tm style="margin-left:auto"></span></div><div class=bar><i id=tb></i></div><div class=card><div class=big>${esc(q.q)}</div>${gimg(q.g)}</div><div class=opts>${q.o.map((o,x)=>o?`<button class="o o${x}" data-l="${L[x]}"><b>${L[x]}</b>${esc(o)}</button>`:'').join('')}</div><p id=msg class=m></p>`;
  let done=false;const send=async l=>{if(done)return;done=true;document.querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.l==l)b.classList.add('me')});try{await pick(l)}catch(e){if(!/Sudah|habis/.test(e.message))err(e)}};
  document.querySelectorAll('.o').forEach(b=>b.onclick=()=>send(b.dataset.l));timer(t0,dur,()=>send('-'))}
-function resView(r,mine,next){const s=r.st,n=s.n||1,ok=mine==r.k;app.innerHTML=`<div class=card><div class=big style="color:${ok?'var(--g)':'var(--r)'}">${mine=='-'?'Waktu habis':ok?'Benar!':'Belum tepat'}${r.poin!=null?' · +'+r.poin+' poin':''}</div><p>Jawaban benar: <b>${r.k}</b></p><p class=m>${esc(r.x||'')}</p></div><div class=card><b>Hasil kelas: ${s.benar} benar · ${s.salah} salah</b>${[...L].map(l=>`<div class=m>${l}${l==r.k?' (benar)':''} · ${s[l]||0} siswa</div><div class=bar><i style="width:${(s[l]||0)/n*100}%"></i></div>`).join('')}</div>${next?'<button id=nx style="width:100%">Lanjut</button>':''}`;if(next)$('nx').onclick=next}
-async function board(end){stop();try{const j=await api('lb',{pid:S.pid});app.innerHTML=`<h1>${end?'Klasemen Akhir':'Klasemen'}</h1><div class=card><table>${j.lb.map((r,i)=>`<tr${r.pid==S.pid?' style="color:var(--a)"':''}><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${esc(r.nama)}<div class=m>${esc(r.kelas)}</div></td><td>${r.benar} benar, ${r.salah} salah</td><td><b>${r.poin}</b></td></tr>`).join('')}</table></div>${j.me?`<div class=card>Peringkatmu: <b>#${j.me.rank}</b> dari ${j.n} siswa · ${j.me.poin} poin</div>`:''}`}catch(e){err(e)}}
-async function mandiri(){stop();if(S.i>=S.total)return board(true);
- try{const j=await api('q',{pid:S.pid,i:S.i});off=j.now-Date.now();
-  qView(j.q,j.dur,j.t0,S.total,async l=>{let r;try{r=await api('ans',{pid:S.pid,i:S.i,j:l})}catch(e){if(/Sudah/.test(e.message)){S.i++;save();return mandiri()}throw e}resView(r,l,()=>{S.i++;save();mandiri()})})}catch(e){err(e)}}
-async function live(){clearTimeout(P);try{const j=await api('state',{pid:S.pid});off=j.now-Date.now();if(j.phase=='question'&&j.dur)E=j.openAt+j.dur*1000;const k=j.phase+j.qi;if(k!=key){key=k;lview(j)}}catch(e){if(/gabung lagi|tidak dikenal/.test(e.message)){localStorage.removeItem('kuis');S={};return joinView('')}}P=setTimeout(live,2500)}
-function lview(j){clearInterval(T);
- if(j.phase=='question')qView(j.q,j.dur,j.openAt,j.total,async l=>{await api('ans',{pid:S.pid,j:l});$('msg').textContent=l=='-'?'Waktu habis':'Jawaban terkirim, menunggu hasil...'});
- else if(j.phase=='result')resView(j.res,j.res.j,null);
- else if(j.phase=='board'||j.phase=='end')board(j.phase=='end');
- else app.innerHTML=`<div class=card><h2>Menunggu guru memulai...</h2><p>Halo, ${esc(S.nama)}! Siapkan kalkulatormu.</p></div>`}
-function joinView(k){app.innerHTML=`<h1>Kuis Diskon Detektif</h1><div class=card><input id=n placeholder="Nama lengkap" autocomplete=off><input id=k2 placeholder="Kelas, contoh X-1"><input id=c placeholder="Kode sesi" inputmode=numeric value="${esc(k)}"><button id=go style="width:100%">Gabung</button></div>`;
- $('go').onclick=async()=>{try{const j=await api('join',{nama:$('n').value,kelas:$('k2').value,kode:$('c').value});S={pid:j.pid,mode:j.mode,total:j.total,nama:j.nama,i:0};save();key='';j.mode=='live'?live():mandiri()}catch(e){err(e)}}}
-async function home(){const k=new URLSearchParams(location.search).get('kode')||'';if(S.pid){try{await api('lb',{pid:S.pid});return S.mode=='live'?live():mandiri()}catch(e){localStorage.removeItem('kuis');S={}}}joinView(k)}
-/* ===== GURU: alamat#guru | PROYEKTOR: alamat#layar ===== */
+
+function resView(r,mine,next){const s=r.st,n=s.n||1,ok=mine==r.k;target.innerHTML=`<div class=card><div class=big style="color:${ok?'var(--g)':'var(--r)'}">${mine=='-'?'Waktu habis':ok?'Benar!':'Belum tepat'}${r.poin!=null?' · +'+r.poin+' poin':''}</div><p>Jawaban benar: <b>${r.k}</b></p><p class=m>${esc(r.x||'')}</p></div><div class=card><b>Hasil kelas: ${s.benar} benar · ${s.salah} salah</b>${[...L].map(l=>`<div class=m>${l}${l==r.k?' (benar)':''} · ${s[l]||0} siswa</div><div class=bar><i style="width:${(s[l]||0)/n*100}%"></i></div>`).join('')}</div>${next?'<button id=nx style="width:100%">Lanjut</button>':''}`;if(next)$('nx').onclick=next}
+
+async function board(end){stop();try{const j=await api('lb',{pid:S.pid});target.innerHTML=`<h1>${end?'Klasemen Akhir':'Klasemen'}</h1><div class=card><table>${j.lb.map((r,i)=>`<tr${r.pid==S.pid?' style="color:var(--a)"':''}><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${esc(r.nama)}<div class=m>${esc(r.kelas)}</div></td><td>${r.benar} benar, ${r.salah} salah</td><td><b>${r.poin}</b></td></tr>`).join('')}</table></div>${j.me?`<div class=card>Peringkatmu: <b>#${j.me.rank}</b> dari ${j.n} siswa · ${j.me.poin} poin</div>`:''}`}catch(e){err(e)}}
+
+// ==========================================
+// 2. LOGIKA KUIS SISWA (Disuntik 3D)
+// ==========================================
+async function mandiri(){
+    stop();
+    if(S.i>=S.total) { hide3D(); target = $('app'); return board(true); }
+    target.innerHTML = `<div class="card"><div class="big">Mengambil soal...</div></div>`;
+    try{
+        const j=await api('q',{pid:S.pid,i:S.i});
+        off=j.now-Date.now();
+        qView(j.q,j.dur,j.t0,S.total,async l=>{
+            $('flee-btn').style.display = 'none'; // Gak bisa kabur kalau udah jawab
+            let r;
+            try{r=await api('ans',{pid:S.pid,i:S.i,j:l})}
+            catch(e){if(/Sudah/.test(e.message)){S.i++;save();return mandiri()}throw e}
+            resView(r,l,()=>{
+                S.i++;save();
+                $('quiz-modal').style.display = 'none';
+                if(activeBox) { activeBox.active = false; scene.remove(activeBox.mesh); }
+                gameActive = true;
+            })
+        })
+    }catch(e){err(e); window.fleeQuiz();}
+}
+
+async function live(){
+    clearTimeout(P);
+    try{
+        const j=await api('state',{pid:S.pid});
+        off=j.now-Date.now();
+        if(j.phase=='question'&&j.dur) E=j.openAt+j.dur*1000;
+        const k=j.phase+j.qi;
+        if(k!=key){ key=k; lview(j); }
+    }catch(e){
+        if(/gabung lagi|tidak dikenal/.test(e.message)){ localStorage.removeItem('kuis'); S={}; return home(); }
+    }
+    P=setTimeout(live,2500);
+}
+
+function lview(j){
+    clearInterval(T);
+    target = $('quiz-modal-content');
+    if(j.phase=='question') {
+        $('quiz-modal').style.display = 'flex';
+        $('flee-btn').style.display = 'none';
+        gameActive = false;
+        qView(j.q,j.dur,j.openAt,j.total,async l=>{
+            await api('ans',{pid:S.pid,j:l});
+            $('msg').textContent=l=='-'?'Waktu habis':'Jawaban terkirim, menunggu hasil...';
+        });
+    }
+    else if(j.phase=='result') {
+        $('quiz-modal').style.display = 'flex';
+        $('flee-btn').style.display = 'none';
+        gameActive = false;
+        resView(j.res,j.res.j,null);
+    }
+    else if(j.phase=='board'||j.phase=='end') {
+        hide3D(); target = $('app'); board(j.phase=='end');
+    }
+    else {
+        // Mode idle / nunggu guru
+        $('quiz-modal').style.display = 'none';
+        gameActive = true; 
+    }
+}
+
+function joinView(k){
+    target=$('app');
+    target.innerHTML=`<h1>Kuis Diskon Detektif 3D</h1><div class=card><input id=n placeholder="Nama lengkap" autocomplete=off><input id=k2 placeholder="Kelas, contoh X-1"><input id=c placeholder="Kode sesi" inputmode=numeric value="${esc(k)}"><button id=go style="width:100%">Gabung</button></div>`;
+    $('go').onclick=async()=>{
+        try{
+            const j=await api('join',{nama:$('n').value,kelas:$('k2').value,kode:$('c').value});
+            S={pid:j.pid,mode:j.mode,total:j.total,nama:j.nama,i:0};
+            save();key='';
+            setup3D(); // Masuk dunia 3D!
+        }catch(e){err(e)}
+    }
+}
+
+async function home(){
+    const k=new URLSearchParams(location.search).get('kode')||'';
+    if(S.pid){
+        try{
+            await api('lb',{pid:S.pid});
+            return setup3D(); // Lanjut main 3D
+        }catch(e){localStorage.removeItem('kuis');S={}}
+    }
+    joinView(k);
+}
+
+// ==========================================
+// 3. ENGINE 3D THREE.JS (VILLAGE & LOGIC)
+// ==========================================
+let scene, camera, renderer, rendererCanvas;
+let player;
+let bots = [];
+let questionBoxes = [];
+let gameActive = false, inMenu = true, activeBox = null;
+const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+let isMouseDown = false, previousMousePosition = { x: 0, y: 0 }, cameraAngle = { theta: 0, phi: Math.PI / 3 }, cameraRadius = 20;
+
+const skins = [
+    { name: "Warga", head: 0xFFD700, torso: 0x2196F3, leg: 0x4CAF50, type: 'warga' },
+    { name: "Petani", head: 0xFFCC80, torso: 0x8D6E63, leg: 0x3E2723, type: 'petani' },
+    { name: "Detektif", head: 0xFFE0B2, torso: 0x5D4037, leg: 0x1F1009, type: 'detektif' }
+];
+let currentSkinIndex = 0;
+
+function setup3D() {
+    $('app').style.display = 'none';
+    $('game-ui').style.display = 'block';
+    target = $('quiz-modal-content'); // Route rendering kuis ke modal 3D
+    
+    if(!scene) init3D();
+    if(rendererCanvas) rendererCanvas.style.display = 'block';
+    
+    $('start-screen').style.display = 'flex';
+    $('controls-hint').style.display = 'none';
+    $('quiz-modal').style.display = 'none';
+}
+
+function hide3D() {
+    $('game-ui').style.display = 'none';
+    $('app').style.display = 'block';
+    if(rendererCanvas) rendererCanvas.style.display = 'none';
+}
+
+function init3D() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); 
+    scene.fog = new THREE.Fog(0x87CEEB, 30, 150);
+
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    
+    rendererCanvas = renderer.domElement;
+    rendererCanvas.style.position = 'fixed';
+    rendererCanvas.style.top = '0';
+    rendererCanvas.style.left = '0';
+    rendererCanvas.style.zIndex = '1';
+    document.body.appendChild(rendererCanvas);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(50, 100, 50);
+    dirLight.castShadow = true;
+    dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
+    dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100;
+    scene.add(dirLight);
+
+    buildVillage();
+    updatePlayerSkin();
+
+    // Spawn Warga (Bots) mondar-mandir
+    for(let i = 0; i < 15; i++) {
+        const bot = createCharacter(skins[Math.floor(Math.random() * skins.length)]);
+        bot.group.position.set((Math.random()-0.5)*120, 0, (Math.random()-0.5)*120);
+        scene.add(bot.group);
+        bots.push({ char: bot, target: new THREE.Vector3((Math.random()-0.5)*120, 0, (Math.random()-0.5)*120), speed: 0.05 + Math.random() * 0.1, wait: 0 });
+    }
+
+    // Generate Papan Soal untuk Mandiri mode
+    for(let i = 0; i < 20; i++) {
+        let bx, bz;
+        do { bx = (Math.random() - 0.5) * 120; bz = (Math.random() - 0.5) * 120; } while(Math.abs(bx) < 15 && Math.abs(bz) < 15);
+        createBulletinBoard(bx, bz);
+    }
+
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    document.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+    document.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+    
+    const moveCam = (dx, dy) => { cameraAngle.theta -= dx * 0.01; cameraAngle.phi -= dy * 0.01; cameraAngle.phi = Math.max(0.1, Math.min(Math.PI/2 - 0.1, cameraAngle.phi)); };
+    rendererCanvas.addEventListener('mousedown', () => isMouseDown = true);
+    rendererCanvas.addEventListener('mouseup', () => isMouseDown = false);
+    rendererCanvas.addEventListener('mousemove', (e) => { if (isMouseDown && gameActive) moveCam(e.movementX, e.movementY); });
+    
+    rendererCanvas.addEventListener('touchstart', (e) => { isMouseDown = true; previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, {passive: false});
+    rendererCanvas.addEventListener('touchend', () => isMouseDown = false);
+    rendererCanvas.addEventListener('touchmove', (e) => {
+        if(isMouseDown && gameActive) { moveCam(e.touches[0].clientX - previousMousePosition.x, e.touches[0].clientY - previousMousePosition.y); previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+    }, {passive: false});
+
+    animate();
+}
+
+function buildVillage() {
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshLambertMaterial({ color: 0x7CB342 }));
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+    const plaza = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshLambertMaterial({ color: 0x9E9E9E }));
+    plaza.rotation.x = -Math.PI / 2; plaza.position.y = 0.01; plaza.receiveShadow = true; scene.add(plaza);
+
+    const roadMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
+    const roadH = new THREE.Mesh(new THREE.PlaneGeometry(300, 12), roadMat); roadH.rotation.x = -Math.PI/2; roadH.position.y = 0.02; roadH.receiveShadow = true;
+    const roadV = new THREE.Mesh(new THREE.PlaneGeometry(12, 300), roadMat); roadV.rotation.x = -Math.PI/2; roadV.position.y = 0.02; roadV.receiveShadow = true;
+    scene.add(roadH); scene.add(roadV);
+
+    createMosque(-25, -25, 0); 
+
+    for(let i = -100; i <= 100; i += 30) {
+        for(let j = -100; j <= 100; j += 30) {
+            if(Math.abs(i) < 20 && Math.abs(j) < 20) continue; 
+            if(i === -30 && j === -30) continue; 
+            let x = i + (Math.random() * 10 - 5), z = j + (Math.random() * 10 - 5);
+            let rot = 0; if(Math.abs(x) < Math.abs(z)) rot = (x > 0 ? -Math.PI/2 : Math.PI/2); else rot = (z > 0 ? Math.PI : 0);
+            let type = Math.random();
+            if (type < 0.6) createHouse(x, z, rot); else if (type < 0.8) createFarm(x, z); else createAnimalPen(x, z);
+        }
+    }
+}
+
+function createHouse(x, z, rot) {
+    const group = new THREE.Group();
+    const wCol = [0xFFE082, 0xBCAAA4, 0x81D4FA, 0xA5D6A7, 0xF48FB1, 0xFFFFFF][Math.floor(Math.random() * 6)];
+    const rCol = [0xD84315, 0x5D4037, 0x37474F, 0xC62828][Math.floor(Math.random() * 4)];
+    const base = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 8), new THREE.MeshLambertMaterial({ color: wCol })); base.position.y = 2.5; base.castShadow = true; group.add(base);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(7, 4, 4), new THREE.MeshLambertMaterial({ color: rCol })); roof.position.y = 7; roof.rotation.y = Math.PI / 4; roof.castShadow = true; group.add(roof);
+    group.position.set(x, 0, z); group.rotation.y = rot; scene.add(group);
+}
+function createMosque(x, z, rot) {
+    const group = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.BoxGeometry(16, 7, 16), new THREE.MeshLambertMaterial({ color: 0xFFFFFF })); base.position.y = 3.5; base.castShadow = true; group.add(base);
+    const domeMat = new THREE.MeshLambertMaterial({ color: 0x1B5E20 });
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), domeMat); dome.position.y = 7; dome.castShadow = true; group.add(dome);
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 18), new THREE.MeshLambertMaterial({ color: 0xFFFFFF })); tower.position.set(-7, 9, 7); tower.castShadow = true; group.add(tower);
+    const towerDome = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), domeMat); towerDome.position.set(-7, 18, 7); group.add(towerDome);
+    group.position.set(x, 0, z); group.rotation.y = rot; scene.add(group);
+}
+function createFarm(x, z) {
+    const farm = new THREE.Group();
+    const soil = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshLambertMaterial({ color: 0x5D4037 })); soil.rotation.x = -Math.PI / 2; soil.position.y = 0.05; soil.receiveShadow = true; farm.add(soil);
+    const plantMat = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+    for(let r=0; r<4; r++) for(let c=0; c<4; c++) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1, 0.5), plantMat); p.position.set(-4 + r*2.6, 0.5, -4 + c*2.6); p.castShadow = true; farm.add(p); }
+    farm.position.set(x, 0, z); scene.add(farm);
+}
+function createAnimalPen(x, z) {
+    const pen = new THREE.Group();
+    const woodMat = new THREE.MeshLambertMaterial({ color: 0x795548 });
+    for(let i=0; i<4; i++) {
+        const side = new THREE.Group();
+        const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2, 0.3), woodMat); p1.position.set(-4.8, 1, 0); side.add(p1);
+        const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2, 0.3), woodMat); p2.position.set(4.8, 1, 0); side.add(p2);
+        const r1 = new THREE.Mesh(new THREE.BoxGeometry(10, 0.3, 0.1), woodMat); r1.position.set(0, 1.5, 0); side.add(r1);
+        const r2 = new THREE.Mesh(new THREE.BoxGeometry(10, 0.3, 0.1), woodMat); r2.position.set(0, 0.7, 0); side.add(r2);
+        side.position.z = 5; if(i===1) { side.rotation.y = Math.PI/2; side.position.set(5, 0, 0); } if(i===2) { side.rotation.y = Math.PI; side.position.set(0, 0, -5); } if(i===3) { side.rotation.y = -Math.PI/2; side.position.set(-5, 0, 0); }
+        pen.add(side);
+    }
+    const cow = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 3), new THREE.MeshLambertMaterial({color: 0xffffff})); body.position.y = 1.5; body.castShadow = true; cow.add(body);
+    cow.rotation.y = Math.random() * Math.PI; pen.add(cow);
+    pen.position.set(x, 0, z); scene.add(pen);
+}
+
+function createCharacter(skin) {
+    const group = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshLambertMaterial({ color: skin.head })); head.position.y = 3.6; head.castShadow = true;
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshLambertMaterial({ color: skin.torso })); torso.position.y = 2; torso.castShadow = true;
+    const armMat = new THREE.MeshLambertMaterial({ color: skin.head }), legMat = new THREE.MeshLambertMaterial({ color: skin.leg });
+    const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2, 0.8), armMat); leftArm.position.set(-1.6, 2, 0); leftArm.castShadow = true;
+    const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2, 0.8), armMat); rightArm.position.set(1.6, 2, 0); rightArm.castShadow = true;
+    const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2, 0.9), legMat); leftLeg.position.set(-0.5, 0, 0); leftLeg.castShadow = true;
+    const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2, 0.9), legMat); rightLeg.position.set(0.5, 0, 0); rightLeg.castShadow = true;
+
+    const bodyWrapper = new THREE.Group();
+    bodyWrapper.add(head); bodyWrapper.add(torso); bodyWrapper.add(leftArm); bodyWrapper.add(rightArm); bodyWrapper.add(leftLeg); bodyWrapper.add(rightLeg);
+    
+    if (skin.type === 'petani') {
+        const hat = new THREE.Mesh(new THREE.ConeGeometry(1.5, 0.6, 16), new THREE.MeshLambertMaterial({ color: 0xFBC02D })); hat.position.y = 4.4; bodyWrapper.add(hat);
+    } else if (skin.type === 'detektif') {
+        const hatMat = new THREE.MeshLambertMaterial({ color: 0x3E2723 });
+        const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.5), hatMat); hat.position.y = 4.4; bodyWrapper.add(hat);
+        const brim = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.1), hatMat); brim.position.y = 4.2; bodyWrapper.add(brim);
+        const glass = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.3, 1.3), new THREE.MeshLambertMaterial({ color: 0x000000 })); glass.position.set(0, 3.7, 0.1); bodyWrapper.add(glass);
+    }
+    bodyWrapper.position.y = 1; group.add(bodyWrapper);
+    return { group, leftLeg, rightLeg, leftArm, rightArm, animTime: 0 };
+}
+
+function createBulletinBoard(x, z) {
+    const boardGroup = new THREE.Group();
+    const legMat = new THREE.MeshLambertMaterial({ color: 0x5D4037 });
+    const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 0.2), legMat); leg1.position.set(-1.5, 1.5, 0); leg1.castShadow = true; boardGroup.add(leg1);
+    const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 0.2), legMat); leg2.position.set(1.5, 1.5, 0); leg2.castShadow = true; boardGroup.add(leg2);
+    const board = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 0.3), new THREE.MeshLambertMaterial({ color: 0xFFE082 })); board.position.set(0, 3, 0); board.castShadow = true; boardGroup.add(board);
+    const indicator = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshLambertMaterial({ color: 0xFFD700, emissive: 0xAA6600 })); indicator.position.set(0, 5, 0); boardGroup.add(indicator);
+    boardGroup.rotation.y = Math.random() * Math.PI; boardGroup.position.set(x, 0, z); scene.add(boardGroup);
+    questionBoxes.push({ mesh: boardGroup, indicator: indicator, active: true, time: Math.random() * 100 });
+}
+
+function updateCamera() {
+    if(!player) return;
+    const target = player.group.position.clone();
+    if (inMenu) {
+        target.y += 2.5; camera.position.lerp(new THREE.Vector3(target.x, target.y, target.z + 8), 0.1); camera.lookAt(target);
+    } else {
+        target.y += 2; 
+        const cx = target.x + cameraRadius * Math.sin(cameraAngle.phi) * Math.sin(cameraAngle.theta);
+        const cy = target.y + cameraRadius * Math.cos(cameraAngle.phi);
+        const cz = target.z + cameraRadius * Math.sin(cameraAngle.phi) * Math.cos(cameraAngle.theta);
+        camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.2); camera.lookAt(target);
+    }
+}
+
+function updatePlayer() {
+    if (!gameActive) return;
+    const moveSpeed = 0.3; let isMoving = false;
+    const frontVec = new THREE.Vector3(-Math.sin(cameraAngle.theta), 0, -Math.cos(cameraAngle.theta)).normalize();
+    const rightVec = new THREE.Vector3(Math.cos(cameraAngle.theta), 0, -Math.sin(cameraAngle.theta)).normalize();
+    const moveDir = new THREE.Vector3(0,0,0);
+    if (keys.w || keys.ArrowUp) { moveDir.add(frontVec); isMoving = true; }
+    if (keys.s || keys.ArrowDown) { moveDir.sub(frontVec); isMoving = true; }
+    if (keys.a || keys.ArrowLeft) { moveDir.sub(rightVec); isMoving = true; } // Fix Arah Kiri
+    if (keys.d || keys.ArrowRight) { moveDir.add(rightVec); isMoving = true; } // Fix Arah Kanan
+
+    if (isMoving) {
+        moveDir.normalize(); player.group.position.addScaledVector(moveDir, moveSpeed);
+        const targetRotation = Math.atan2(moveDir.x, moveDir.z);
+        let rotDiff = targetRotation - player.group.rotation.y;
+        while (rotDiff > Math.PI) rotDiff -= Math.PI * 2; while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+        player.group.rotation.y += rotDiff * 0.2;
+        player.animTime += 0.25; const swing = Math.sin(player.animTime) * 0.8;
+        player.leftLeg.rotation.x = swing; player.rightLeg.rotation.x = -swing;
+        player.leftArm.rotation.x = -swing; player.rightArm.rotation.x = swing;
+    } else {
+        player.leftLeg.rotation.x *= 0.8; player.rightLeg.rotation.x *= 0.8; player.leftArm.rotation.x *= 0.8; player.rightArm.rotation.x *= 0.8;
+    }
+    player.group.position.x = Math.max(-140, Math.min(140, player.group.position.x));
+    player.group.position.z = Math.max(-140, Math.min(140, player.group.position.z));
+}
+
+function updateBots() {
+    if (inMenu) return;
+    bots.forEach(bot => {
+        if (bot.wait > 0) {
+            bot.wait--; bot.char.leftLeg.rotation.x *= 0.8; bot.char.rightLeg.rotation.x *= 0.8; bot.char.leftArm.rotation.x *= 0.8; bot.char.rightArm.rotation.x *= 0.8; return;
+        }
+        const dist = bot.char.group.position.distanceTo(bot.target);
+        if (dist < 1.0) { bot.wait = 50 + Math.random() * 100; bot.target.set((Math.random()-0.5)*120, 0, (Math.random()-0.5)*120); } 
+        else {
+            const dir = new THREE.Vector3().subVectors(bot.target, bot.char.group.position).normalize();
+            bot.char.group.position.addScaledVector(dir, bot.speed);
+            const targetRotation = Math.atan2(dir.x, dir.z);
+            let rotDiff = targetRotation - bot.char.group.rotation.y;
+            while (rotDiff > Math.PI) rotDiff -= Math.PI * 2; while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+            bot.char.group.rotation.y += rotDiff * 0.1;
+            bot.char.animTime += 0.2; const swing = Math.sin(bot.char.animTime) * 0.6;
+            bot.char.leftLeg.rotation.x = swing; bot.char.rightLeg.rotation.x = -swing; bot.char.leftArm.rotation.x = -swing; bot.char.rightArm.rotation.x = swing;
+        }
+    });
+}
+
+function triggerQuiz(qb) {
+    if (S.mode == 'live') {
+        const frontVec = new THREE.Vector3(-Math.sin(player.group.rotation.y), 0, -Math.cos(player.group.rotation.y));
+        player.group.position.addScaledVector(frontVec, -6);
+        return;
+    }
+    gameActive = false; activeBox = qb;
+    for(let k in keys) keys[k] = false;
+    $('quiz-modal').style.display = 'flex';
+    $('flee-btn').style.display = 'block';
+    mandiri();
+}
+
+function checkCollisions() {
+    if (!gameActive) return;
+    const playerPos = player.group.position;
+    questionBoxes.forEach(qb => {
+        if (qb.active) {
+            qb.time += 0.05; qb.indicator.position.y = 4.8 + Math.sin(qb.time) * 0.3; qb.indicator.rotation.y += 0.05;
+            if (playerPos.distanceTo(qb.mesh.position) < 3.5) triggerQuiz(qb);
+        }
+    });
+}
+
+function animate() { requestAnimationFrame(animate); updatePlayer(); updateBots(); checkCollisions(); updateCamera(); renderer.render(scene, camera); }
+
+window.changeSkin = function(dir) {
+    currentSkinIndex += dir; if (currentSkinIndex < 0) currentSkinIndex = skins.length - 1; if (currentSkinIndex >= skins.length) currentSkinIndex = 0;
+    document.getElementById('skin-name').innerText = skins[currentSkinIndex].name; updatePlayerSkin();
+};
+
+function updatePlayerSkin() {
+    if (player) scene.remove(player.group);
+    player = createCharacter(skins[currentSkinIndex]); player.group.position.set(0, 0, 0); scene.add(player.group);
+}
+
+window.startGame = function() {
+    $('start-screen').style.display = 'none';
+    $('controls-hint').style.display = 'block';
+    inMenu = false; gameActive = true; cameraAngle.theta = 0; cameraAngle.phi = Math.PI / 3;
+    if (S.mode == 'live') live();
+};
+
+window.fleeQuiz = function() {
+    $('quiz-modal').style.display = 'none';
+    if(player) {
+        const frontVec = new THREE.Vector3(-Math.sin(player.group.rotation.y), 0, -Math.cos(player.group.rotation.y));
+        player.group.position.addScaledVector(frontVec, -6);
+    }
+    gameActive = true;
+    clearInterval(T); // Berhentiin timer kuis
+};
+
+// ==========================================
+// 4. MENU GURU & LAYAR (TETAP SAMA)
+// ==========================================
 const PH={idle:'Belum mulai',lobby:'Menunggu siswa',question:'Soal berjalan',result:'Hasil ditampilkan',board:'Klasemen ditampilkan',end:'Selesai'};
 const url=()=>location.origin+location.pathname,qr=(s,k)=>`<img alt="QR sesi" width=${s} height=${s} src="https://api.qrserver.com/v1/create-qr-code/?size=${s*2}x${s*2}&data=${encodeURIComponent(url()+'?kode='+k)}">`;
 const tick=()=>{clearInterval(T2);T2=setInterval(()=>{const e=$('pt');if(e)e.textContent=Math.max(0,Math.ceil((PE-Date.now())/1000))+' dtk'},500)};
@@ -52,10 +514,10 @@ function csv(t){t=t.replace(/^\uFEFF/,'');const h=t.split(/\r?\n/)[0],d=h.includ
 function dlf(n,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+t],{type:'text/csv'}));a.download=n;a.click()}
 const toCsv=a=>a.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
 async function gate(next){let pin=sessionStorage.pin||'';const A=(a,d)=>api(a,{pin,...d});
- const login=()=>{app.innerHTML=`<h1>Masuk Guru</h1><div class=card><input id=pn type=password placeholder="PIN guru"><button id=ok style="width:100%">Masuk</button></div>`;$('ok').onclick=async()=>{pin=$('pn').value;try{await A('a_info');sessionStorage.pin=pin;next(A)}catch(e){err(e)}}};
+ const login=()=>{target.innerHTML=`<h1>Masuk Guru</h1><div class=card><input id=pn type=password placeholder="PIN guru"><button id=ok style="width:100%">Masuk</button></div>`;$('ok').onclick=async()=>{pin=$('pn').value;try{await A('a_info');sessionStorage.pin=pin;next(A)}catch(e){err(e)}}};
  try{await A('a_info');next(A)}catch(e){login()}}
-function dash(A){app.className='wide';let Q=[],AN=null;const go=async(a,d)=>{try{await A(a,d);poll()}catch(e){err(e)}};
- app.innerHTML=`<h1>Dashboard Guru</h1><p class=m><a id=lay target=_blank style="color:var(--a)">Buka layar proyektor (tab baru)</a></p>
+function dash(A){$('app').className='wide';let Q=[],AN=null;const go=async(a,d)=>{try{await A(a,d);poll()}catch(e){err(e)}};
+ target.innerHTML=`<h1>Dashboard Guru</h1><p class=m><a id=lay target=_blank style="color:var(--a)">Buka layar proyektor (tab baru)</a></p>
 <div class=card><div class=two><div><b>1. Sesi kuis</b> <span id=ns class=m></span><select id=md><option value=live>Serentak: guru mengatur soal</option><option value=mandiri>Mandiri: siswa jalan sendiri</option></select><button id=st style="width:100%">Mulai sesi baru</button></div><div id=sx class=m>Belum ada sesi aktif.</div></div></div>
 <div class=card><b>2. Kontrol kuis</b> <span id=ph class=m></span><div class=row id=ctl style="margin:10px 0"></div><div id=pv></div></div>
 <div class=card><b>3. Soal</b><div id=sl></div><div class=row style="margin-top:10px"><button id=ad>Tambah soal</button><button class=s id=tp>Unduh template CSV</button></div>
@@ -98,12 +560,23 @@ function dash(A){app.className='wide';let Q=[],AN=null;const go=async(a,d)=>{try
   $('pv').innerHTML=h;
   $('lbx').innerHTML='<table>'+j.lb.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.nama)} <span class=m>${esc(r.kelas)}</span></td><td>${r.benar} benar, ${r.salah} salah</td><td><b>${r.poin}</b></td></tr>`).join('')+'</table>'}catch(e){}};
  loadQ();poll();T=setInterval(poll,3000);tick()}
-function lay(A){app.className='wide';document.body.style.fontSize='22px';const poll=async()=>{try{const j=await A('a_info'),s=j.st,c=j.cur;PE=c?c.end-(j.now-Date.now()):0;let h='';
+
+function lay(A){$('app').className='wide';document.body.style.fontSize='22px';const poll=async()=>{try{const j=await A('a_info'),s=j.st,c=j.cur;PE=c?c.end-(j.now-Date.now()):0;let h='';
  if(!s.sesi||s.phase=='lobby')h=`<div style="text-align:center"><h1 style="font-size:44px">Kuis Diskon Detektif</h1>${s.sesi?`<p>Scan QR atau buka <b>${url()}</b></p>${qr(280,s.kode)}<div class=big style="font-size:64px">Kode ${s.kode}</div><p class=big>${j.peserta} siswa bergabung</p>`:'<p>Belum ada sesi aktif.</p>'}</div>`;
  else if(s.phase=='board'||s.phase=='end')h=`<h1 style="font-size:44px">${s.phase=='end'?'Klasemen Akhir':'Klasemen'}</h1><div class=card><table style="font-size:28px">${j.lb.map((r,i)=>`<tr><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${esc(r.nama)} <span class=m>${esc(r.kelas)}</span></td><td>${r.benar} benar</td><td><b>${r.poin}</b></td></tr>`).join('')}</table></div>`;
  else if(c){const res=s.phase=='result',t=c.st;h=`<div class=row><span class=m>Soal ${c.no} dari ${j.total}</span>${res?'':'<span class=big id=pt style="margin-left:auto;font-size:40px"></span>'}</div><div class=card><div class=big style="font-size:34px">${esc(c.q)}</div>${gimg(c.g,340)}</div><div class=opts>${c.o.map((o,x)=>o?`<div class="o o${x}" style="font-size:28px;${res&&L[x]!=c.k?'opacity:.4;':''}${res&&L[x]==c.k?'outline:6px solid #fff;':''}"><b>${L[x]}</b><span style="flex:1">${esc(o)}</span>${res?`<span>${t[L[x]]||0}</span>`:''}</div>`:'').join('')}</div>${res?`<p class=big>${t.benar} benar · ${t.salah} salah</p><p class=m>${esc(c.x)}</p>`:`<p class=m>${j.jawab} dari ${j.peserta} sudah menjawab</p>`}`}
  if(!('cur' in j))h='<p class=big>Backend Apps Script masih versi lama. Buat Versi baru di Kelola deployment.</p>';
- app.innerHTML=h}catch(e){}};poll();T=setInterval(poll,2000);tick()}
-function route(){stop();document.body.style.fontSize='';app.className='';const h=location.hash;h=='#guru'?gate(dash):h=='#layar'?gate(lay):home()}
+ target.innerHTML=h}catch(e){}};poll();T=setInterval(poll,2000);tick()}
+
+function route(){
+    stop(); document.body.style.fontSize=''; $('app').className='';
+    const h=location.hash;
+    if(h=='#guru') { hide3D(); target=$('app'); gate(dash); }
+    else if(h=='#layar') { hide3D(); target=$('app'); gate(lay); }
+    else { hide3D(); home(); }
+}
+
 window.onhashchange=route;route();
-</script></body></html>
+</script>
+</body>
+</html>
