@@ -18,9 +18,9 @@ const esc2=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}
 function hud(h,keep){const e=$('ahud');e.style.display='block';e.innerHTML='<div class="card" style="margin:0;background:#0F172Add">'+h+'</div>';if(!keep)lastHud=h}
 /* ---- lantai melayang ---- */
 function floorTex(L,tx,col,big){const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');g.fillStyle='#'+col.toString(16).padStart(6,'0');g.fillRect(0,0,512,512);g.strokeStyle='#fff';g.lineWidth=14;g.strokeRect(7,7,498,498);g.fillStyle='#fff';g.textAlign='center';
- if(big){g.font='bold 110px sans-serif';g.fillText(String(tx).toUpperCase(),256,290)}else{g.font='bold 210px sans-serif';g.fillText(L,256,250);g.font='bold 36px sans-serif';let l='',y=315;String(tx).split(' ').forEach(w=>{const n=l+w+' ';if(g.measureText(n).width>440&&l){g.fillText(l,256,y);l=w+' ';y+=42}else l=n});g.fillText(l,256,y)}return new THREE.CanvasTexture(c)}
+ if(big){g.font='bold 110px sans-serif';g.fillText(String(tx).toUpperCase(),256,290)}else{g.font='bold 170px sans-serif';g.fillText(L,256,185);g.font='bold 52px sans-serif';let l='',y=285;String(tx).split(' ').forEach(w=>{const n=l+w+' ';if(g.measureText(n).width>450&&l){g.fillText(l,256,y);l=w+' ';y+=58}else l=n});g.fillText(l,256,y)}return new THREE.CanvasTexture(c)}
 function clear(){plats.forEach(q=>scene.remove(q.g));plats.length=0}
-function build(o,game){clear();const two=game==='dua'||o.filter(Boolean).length<=2,ix=[0,1,2,3].filter(i=>o[i]).slice(0,two?2:4),sp=two?[[-15,0],[15,0]]:[[-12.5,-12.5],[12.5,-12.5],[-12.5,12.5],[12.5,12.5]],s=two?30:25;
+function build(o,game){clear();const two=game==='dua'||o.filter(Boolean).length<=2,ix=[0,1,2,3].filter(i=>o[i]).slice(0,two?2:4),sp=two?[[-12,0],[12,0]]:[[-10,-10],[10,-10],[-10,10],[10,10]],s=two?24:20;
  ix.forEach((i,n)=>{const L='ABCD'[i],col=game==='dua'?(n?0xE53935:0x43A047):COL[L],g=new THREE.Group();
   const b=new THREE.Mesh(new THREE.BoxGeometry(s,2,s),new THREE.MeshLambertMaterial({color:0x37474F}));b.position.y=-1;g.add(b);
   const t=new THREE.Mesh(new THREE.PlaneGeometry(s-.6,s-.6),new THREE.MeshBasicMaterial({map:floorTex(L,o[i],col,game==='dua')}));t.rotation.x=-Math.PI/2;t.position.y=.05;g.add(t);
@@ -29,15 +29,19 @@ const over=p=>plats.find(q=>Math.abs(p.x-q.x)<=q.sx/2&&Math.abs(p.z-q.z)<=q.sz/2
 const under=()=>{const p=player.group.position,q=over(p);return q&&!q.fall&&p.y>=AY-1.5?q:null};
 function lobby(){hud('<div class="big">Kamu sudah di dalam gerbang 🎉</div><div class="m">Jalan-jalan di lantai melayang. Tunggu guru membuka soal pertama.</div>')}
 function start(j){clearInterval(tmr);sent=false;build(j.q.o,j.game);
- hud(`<div class="m">Soal ${j.q.no} dari ${j.total} · lari ke lantai jawabanmu!</div><div class="big">${esc2(j.q.q)}</div><div class="big" id="at"></div>`);
+ hud(`<div class="m">Soal ${j.q.no}/${j.total} · ketuk kotak ini untuk sembunyikan soal</div><div class="big qt">${esc2(j.q.q)}</div><div class="big" id="at"></div>`);
  tmr=setInterval(()=>{const l=Math.ceil((rEnd-(Date.now()+off))/1000),e=$('at');if(e)e.textContent='⏱ '+Math.max(0,l)+' dtk';
   if(l<=0&&!sent){sent=true;clearInterval(tmr);const q=under();api('ans',{pid:S.pid,j:q?q.letter:'-'}).catch(()=>{})}},200)}
 function end(j){clearInterval(tmr);const r=j.res,ok=r.j===r.k;plats.forEach(q=>{if(q.letter!==r.k){q.fall=true;q.v=0}});
  const rm=window.__rem||{};for(const id in rm){const g=rm[id].c.group;if(g.position.y>30){const q=over(g.position);if(!q||q.fall)rm[id].t.y=0}}
  hud(`<div class="big" style="color:${ok?'var(--g)':'var(--r)'}">${r.j==='-'?'⏰ Tidak berada di lantai mana pun':ok?'✅ Aman! +'+r.poin+' poin':'💦 Jatuh!'}</div><div>Jawaban benar: <b>${r.k}</b></div><div class="m">${esc2(r.x||'')}</div>`)}
-async function enter(){if(on)return;on=true;lk='';vy=0;try{await api('arena_in',{pid:S.pid})}catch(e){}
+let camSave=null;
+function camOn(){camSave={f:camera.fov,r:cameraRadius,p:cameraAngle.phi,n:scene.fog.near,fa:scene.fog.far};camera.fov=72;camera.updateProjectionMatrix();cameraAngle.phi=.9;const hf=Math.tan(36*Math.PI/180)*(innerWidth/innerHeight);cameraRadius=Math.min(85,Math.max(45,28/hf));scene.fog.near=150;scene.fog.far=500}
+function camOff(){if(!camSave)return;camera.fov=camSave.f;camera.updateProjectionMatrix();cameraRadius=camSave.r;cameraAngle.phi=camSave.p;scene.fog.near=camSave.n;scene.fog.far=camSave.fa;camSave=null}
+const _uc=updateCamera;updateCamera=function(){if(!on)return _uc();const p=player.group.position,R=cameraRadius,ph=cameraAngle.phi,th=cameraAngle.theta,tx=p.x*.25,tz=p.z*.25,ty=p.y<AY-3?p.y+2:AY+R*.13;camera.position.lerp(new THREE.Vector3(tx+R*Math.sin(ph)*Math.sin(th),ty+R*Math.cos(ph),tz+R*Math.sin(ph)*Math.cos(th)),.12);camera.lookAt(tx,ty,tz)};
+async function enter(){if(on)return;on=true;camOn();lk='';vy=0;try{await api('arena_in',{pid:S.pid})}catch(e){}
  player.group.position.set(0,AY+.1,0);build(GS.game==='dua'?['Benar','Salah','','']:['pilihan A','pilihan B','pilihan C','pilihan D'],GS.game);lobby();onState(GS)}
-function exit(){on=false;clearInterval(tmr);clearTimeout(landT);clear();player.group.position.set(0,0,22);$('ahud').style.display='none'}
+function exit(){on=false;camOff();clearInterval(tmr);clearTimeout(landT);clear();player.group.position.set(0,0,22);$('ahud').style.display='none'}
 /* ---- gerbang di desa ---- */
 function sign(t){const c=document.createElement('canvas');c.width=512;c.height=128;const g=c.getContext('2d');g.fillStyle='#0F172A';g.fillRect(0,0,512,128);g.strokeStyle='#22D3EE';g.lineWidth=8;g.strokeRect(4,4,504,120);g.fillStyle='#FDE68A';g.font='bold 46px sans-serif';g.textAlign='center';g.fillText(t,256,82);return new THREE.Mesh(new THREE.PlaneGeometry(11,2.75),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}))}
 function mkGates(){GAMES.forEach(G=>{const g=new THREE.Group(),m=new THREE.MeshLambertMaterial({color:0x6D4C41});
@@ -59,6 +63,7 @@ function inject(){if(!$('ctl')||$('ar-card'))return;const c=document.createEleme
  c.onclick=async e=>{const b=e.target.closest('button');if(!b)return;try{await api('a_game',{pin:sessionStorage.pin,game:b.dataset.g})}catch(x){alert(x.message)}};
  clearInterval(arT);arT=setInterval(async()=>{try{const j=await api('a_info',{pin:sessionStorage.pin});$('ar-st').innerHTML=j.st.mode!=='live'?'Mulai sesi mode <b>Serentak</b> dulu.':j.st.game?`Gerbang <b>${j.st.game==='pulau'?'Pulau Melayang':'Dua Lantai'}</b> terbuka · <b>${j.ain}</b> dari ${j.peserta} siswa sudah masuk. Kalau sudah kumpul, tekan <b>Buka soal 1</b> di Kontrol kuis.`:'Gerbang tertutup. Pilih game di atas.'}catch(e){}},3000)}
 new MutationObserver(inject).observe(document.body,{childList:true,subtree:true});setInterval(inject,1000);inject();
-function boot(){mkGates();$('game-ui').insertAdjacentHTML('afterbegin','<div id="ahud" style="position:absolute;top:56px;left:50%;transform:translateX(-50%);width:min(92vw,720px);display:none;text-align:center;pointer-events:none;z-index:6"></div>');loop()}
+const st=document.createElement('style');st.textContent='#ahud{pointer-events:auto!important}#ahud .card{padding:8px 12px!important;max-height:26vh;overflow:auto;background:#0F172Ab8!important}#ahud .big{font-size:16px}#ahud.min .qt{display:none}';document.head.appendChild(st);
+function boot(){mkGates();$('game-ui').insertAdjacentHTML('afterbegin','<div id="ahud" style="position:absolute;top:56px;left:50%;transform:translateX(-50%);width:min(92vw,720px);display:none;text-align:center;pointer-events:none;z-index:6"></div>');$('ahud').onclick=()=>$('ahud').classList.toggle('min');loop()}
 const _i=init3D;init3D=function(){_i();boot()};if(typeof scene!=='undefined'&&scene&&!gates.length)boot();
 })();
