@@ -59,12 +59,12 @@ mandiri=async function(tp){tp=tp||'umum';stop();openUI();target.innerHTML='<div 
  catch(e){err(e);window.fleeQuiz()}};
 function showLb(){activeBox=null;openUI();$('flee-btn').style.display='block';board(false)}
 /* ===== multiplayer: posisi lewat Apps Script tiap 2,5 detik ===== */
-const rem={};let syncOn=false,lastP=new THREE.Vector3();
+const rem={};window.__rem=rem;let syncOn=false,lastP=new THREE.Vector3();
 function tag(txt){const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');g.fillStyle='rgba(15,23,42,.8)';g.fillRect(0,8,256,48);g.fillStyle='#F59E0B';g.font='bold 30px sans-serif';g.textAlign='center';g.fillText(String(txt).slice(0,16),128,44);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}));s.scale.set(6,1.5,1);s.position.y=6.4;return s}
-function applyRem(list){const seen={};list.forEach(r=>{seen[r[0]]=1;let o=rem[r[0]];if(!o){const c=createCharacter(skins[r[5]%skins.length]||skins[0]);c.group.add(tag(r[1]));c.group.position.set(r[2],0,r[3]);scene.add(c.group);o=rem[r[0]]={c,t:new THREE.Vector3(),ry:0,ph:0}}o.t.set(r[2],0,r[3]);o.ry=r[4]});
+function applyRem(list){const seen={};list.forEach(r=>{seen[r[0]]=1;let o=rem[r[0]];if(!o){const c=createCharacter(skins[r[5]%skins.length]||skins[0]);c.group.add(tag(r[1]));c.group.position.set(r[2],0,r[3]);scene.add(c.group);o=rem[r[0]]={c,t:new THREE.Vector3(),ry:0,ph:0}}o.t.set(r[2],r[6]||0,r[3]);o.ry=r[4]});
  for(const id in rem)if(!seen[id]){scene.remove(rem[id].c.group);delete rem[id]}}
 async function sync(){if(!S.pid)return;const g=player.group;lastP.copy(g.position);
- try{const j=await api('pos',{pid:S.pid,x:+g.position.x.toFixed(1),z:+g.position.z.toFixed(1),ry:+g.rotation.y.toFixed(2),sk:currentSkinIndex});applyRem(j.p);$('hud-sc').textContent='⭐ '+j.me.poin+(j.me.rank?' · #'+j.me.rank:'');$('hud-on').textContent='👥 '+(j.p.length+1)}catch(e){}
+ try{const j=await api('pos',{pid:S.pid,x:+g.position.x.toFixed(1),z:+g.position.z.toFixed(1),ry:+g.rotation.y.toFixed(2),sk:currentSkinIndex,y:+g.position.y.toFixed(1)});applyRem(j.p);$('hud-sc').textContent='⭐ '+j.me.poin+(j.me.rank?' · #'+j.me.rank:'');$('hud-on').textContent='👥 '+(j.p.length+1)}catch(e){}
  setTimeout(sync,2500)}
 function loop(){requestAnimationFrame(loop);const t=performance.now()/1000,pp=player.group.position;
  veh.forEach(v=>{const p=v.g.position;p.x+=v.dx*v.sp;p.z+=v.dz*v.sp;if(Math.abs(p.x)>150)p.x=-Math.sign(p.x)*150;if(Math.abs(p.z)>150)p.z=-Math.sign(p.z)*150;
