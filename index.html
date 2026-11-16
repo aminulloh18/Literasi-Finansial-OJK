@@ -148,13 +148,16 @@ tr:nth-child(even) td{background:#ffffff06}
 </div>
 
 <script>
+// Helper global dideklarasikan paling atas agar bisa dipakai semua modul
+const $=id=>document.getElementById(id),L='ABCD';
+
 // ==========================================
 // 0. SISTEM ANTI-CHEATING & ANTI-BUKA TAB
 // ==========================================
 let antiCheatActive = false;
 let cheatCount = 0;
 let cheatGraceTimer = null;
-let activeQuizAutoFail = null; // Callback untuk membatalkan/mengosongkan soal jika curang
+let activeQuizAutoFail = null;
 
 function playBeep() {
   try {
@@ -186,7 +189,7 @@ function updateCheatHud() {
 function triggerCheatWarning(reason) {
   if (!antiCheatActive) return;
   if (location.hash === '#guru' || location.hash === '#layar') return;
-  if (cheatGraceTimer) return; // Sudah dalam hitungan mundur peringatan
+  if (cheatGraceTimer) return;
 
   playBeep();
   const ov = $('cheat-overlay');
@@ -213,7 +216,6 @@ function triggerCheatWarning(reason) {
       tm.textContent = `Pelanggaran tercatat (${cheatCount}x)! Soal aktif otomatis ditutup/hangus.`;
       btn.style.display = 'inline-block';
 
-      // Hanguskan soal yang sedang terbuka
       if (typeof activeQuizAutoFail === 'function') {
         const fn = activeQuizAutoFail;
         activeQuizAutoFail = null;
@@ -223,7 +225,6 @@ function triggerCheatWarning(reason) {
   }, 1000);
 }
 
-// Jika siswa cepat kembali sebelum 3 detik habis
 function cancelGraceIfReturned() {
   if (cheatGraceTimer && !document.hidden) {
     clearInterval(cheatGraceTimer);
@@ -247,7 +248,6 @@ window.addEventListener('blur', () => {
 
 window.addEventListener('focus', cancelGraceIfReturned);
 
-// Blokir klik kanan, copy, cut, paste, & shortcut DevTools saat mode siswa aktif
 document.addEventListener('contextmenu', e => {
   if (antiCheatActive && location.hash !== '#guru' && location.hash !== '#layar') e.preventDefault();
 });
@@ -271,7 +271,6 @@ document.addEventListener('keydown', e => {
 // 1. SISTEM BACKEND GOOGLE SCRIPT & UTILS
 // ==========================================
 const API='https://script.google.com/macros/s/AKfycbxdp8xZAHlhheCWztk_KYXrXqH0LdNsNKMMcHRUjpSX0qzq6hXI_842p3OjJqfQfR_2rw/exec';
-const $=id=>document.getElementById(id),L='ABCD';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&','<':'<','>':'>','"':'"'}[c]));
 async function api(a,d={}){const r=await fetch(API,{method:'POST',body:JSON.stringify({a,...d})});const j=await r.json();if(!j.ok)throw new Error(j.err);return j}
 let S=JSON.parse(localStorage.getItem('kuis')||'{}'),T=null,T2=null,P=null,off=0,key='',E=0,PE=0;
@@ -288,11 +287,10 @@ function qView(q,dur,t0,total,pick){
   let done=false;
   const send=async l=>{
     if(done)return;done=true;
-    activeQuizAutoFail = null; // Reset hook anti-cheat setelah jawaban terkirim
+    activeQuizAutoFail = null;
     document.querySelectorAll('.o').forEach(b=>{b.disabled=true;if(b.dataset.l==l)b.classList.add('me')});
     try{await pick(l)}catch(e){if(!/Sudah|habis/.test(e.message))err(e)}
   };
-  // Daftarkan fungsi auto-fail jika siswa ketahuan pindah tab saat mengerjakan soal
   activeQuizAutoFail = () => send('-');
 
   document.querySelectorAll('.o').forEach(b=>b.onclick=()=>send(b.dataset.l));
@@ -308,7 +306,7 @@ function resView(r,mine,next){
 async function board(end){
   stop();
   activeQuizAutoFail = null;
-  if(end) antiCheatActive = false; // Matikan anti-cheat saat kuis sudah benar-benar selesai
+  if(end) antiCheatActive = false;
   try{
     const j=await api('lb',{pid:S.pid});
     target.innerHTML=`<h1>${end?'Klasemen Akhir':'Klasemen'}</h1><div class=card><table>${j.lb.map((r,i)=>`<tr${r.pid==S.pid?' style="color:var(--a)"':''}><td>${['🥇','🥈','🥉'][i]||i+1}</td><td>${esc(r.nama)}<div class=m>${esc(r.kelas)}</div></td><td>${r.benar} benar, ${r.salah} salah</td><td><b>${r.poin}</b></td></tr>`).join('')}</table></div>${j.me?`<div class=card>Peringkatmu: <b>#${j.me.rank}</b> dari ${j.n} siswa · ${j.me.poin} poin</div>`:''}`;
@@ -932,7 +930,6 @@ window.startGame = function() {
   if(S.mode === 'live') $('hud-lb').style.display = 'none';
   inMenu = false; gameActive = true; cameraAngle.theta = 0; cameraAngle.phi = Math.PI / 3;
 
-  // Aktifkan Anti-Cheating begitu masuk ke dalam game
   antiCheatActive = true;
   updateCheatHud();
 
