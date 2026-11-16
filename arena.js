@@ -53,11 +53,12 @@ function loop(){requestAnimationFrame(loop);if(typeof scene==='undefined'||!scen
  if(sup&&p.y>=AY-1.5){p.y=AY;vy=0}
  else if(p.y>0){vy+=.03;p.y=Math.max(0,p.y-vy);if(p.y===0){vy=0;hud('<div class="big">💦 Splash! Sebentar lagi kembali ke arena...</div>',1);clearTimeout(landT);landT=setTimeout(()=>{if(!on)return;p.set(0,AY+.1,0);hud(lastHud)},1500)}}}
 /* ---- panel guru: disisipkan otomatis ke dashboard ---- */
-new MutationObserver(()=>{if($('ctl')&&!$('ar-card')){const c=document.createElement('div');c.className='card';c.id='ar-card';c.style.gridColumn='1/-1';
+function inject(){if(!$('ctl')||$('ar-card'))return;const c=document.createElement('div');c.className='card';c.id='ar-card';c.style.gridColumn='1/-1';
  c.innerHTML='<b>🎮 Arena: pilih game, siswa masuk gerbang di desa</b><div class="row" style="margin:10px 0"><button data-g="pulau">Pulau Melayang (A-D)</button><button data-g="dua">Dua Lantai (Benar/Salah)</button><button class="s" data-g="">Tutup gerbang</button></div><div id="ar-st" class="m">Mulai sesi mode Serentak, lalu pilih game.</div>';
  $('ctl').closest('.card').before(c);
  c.onclick=async e=>{const b=e.target.closest('button');if(!b)return;try{await api('a_game',{pin:sessionStorage.pin,game:b.dataset.g})}catch(x){alert(x.message)}};
- clearInterval(arT);arT=setInterval(async()=>{try{const j=await api('a_info',{pin:sessionStorage.pin});$('ar-st').innerHTML=j.st.mode!=='live'?'Mulai sesi mode <b>Serentak</b> dulu.':j.st.game?`Gerbang <b>${j.st.game==='pulau'?'Pulau Melayang':'Dua Lantai'}</b> terbuka · <b>${j.ain}</b> dari ${j.peserta} siswa sudah masuk. Kalau sudah kumpul, tekan <b>Buka soal 1</b> di Kontrol kuis.`:'Gerbang tertutup. Pilih game di atas.'}catch(e){}},3000)}}).observe(document.body,{childList:true,subtree:true});
+ clearInterval(arT);arT=setInterval(async()=>{try{const j=await api('a_info',{pin:sessionStorage.pin});$('ar-st').innerHTML=j.st.mode!=='live'?'Mulai sesi mode <b>Serentak</b> dulu.':j.st.game?`Gerbang <b>${j.st.game==='pulau'?'Pulau Melayang':'Dua Lantai'}</b> terbuka · <b>${j.ain}</b> dari ${j.peserta} siswa sudah masuk. Kalau sudah kumpul, tekan <b>Buka soal 1</b> di Kontrol kuis.`:'Gerbang tertutup. Pilih game di atas.'}catch(e){}},3000)}
+new MutationObserver(inject).observe(document.body,{childList:true,subtree:true});setInterval(inject,1000);inject();
 function boot(){mkGates();$('game-ui').insertAdjacentHTML('afterbegin','<div id="ahud" style="position:absolute;top:56px;left:50%;transform:translateX(-50%);width:min(92vw,720px);display:none;text-align:center;pointer-events:none;z-index:6"></div>');loop()}
 const _i=init3D;init3D=function(){_i();boot()};if(typeof scene!=='undefined'&&scene&&!gates.length)boot();
 })();
