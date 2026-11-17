@@ -266,6 +266,7 @@ function dash(A){$('app').className='wide';let Q=[],AN=null;const go=async(a,d)=
  $('an').onclick=async()=>{try{AN=await A('a_analisis');$('ax').innerHTML='<table><tr><th>No</th><th>Soal</th><th>Kunci</th><th>Dijawab</th><th>% benar</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Pengecoh</th></tr>'+AN.rows.map(r=>`<tr><td>${r[0]}</td><td>${esc(String(r[1]).slice(0,60))}</td><td>${r[2]}</td><td>${r[3]}</td><td><b>${r[4]}%</b></td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[9]}</td></tr>`).join('')+'</table>';renderTex($('ax'))}catch(e){err(e)}};
  $('anl').onclick=async()=>{if(!AN)await $('an').onclick();if(AN)dlf('analisis-soal.csv',toCsv([['No','Soal','Kunci','Dijawab','Persen benar','A','B','C','D','Pengecoh'],...AN.rows]))};
  $('st').onclick=()=>go('a_start',{mode:$('md').value});
+ $('lay').outerHTML=`<a id=lay target=_blank href="${url()}#layar" style="color:var(--a);margin-right:16px">📺 Layar Proyektor (Kuis)</a><a target=_blank href="${url()}#pantau" style="color:#67E8F9;font-weight:700">🎥 Pantau Dunia 3D (Drone Live)</a>`;
 
  $('plist-box').onclick=async e=>{
    const b=e.target.closest('button[data-kick]');if(!b)return;
