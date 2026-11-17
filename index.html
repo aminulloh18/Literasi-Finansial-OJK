@@ -244,7 +244,7 @@ function dash(A){$('app').className='wide';let Q=[],AN=null;const go=async(a,d)=
 <div class=card><b>5. Analisis soal</b> <div class=row style="margin:10px 0"><button class=s id=an>Tampilkan analisis</button><button class=s id=anl>Unduh analisis CSV</button></div><div id=ax style="overflow-x:auto"></div></div>
 <div class=card><b>Klasemen sementara</b><div id=lbx></div></div>
 <div id=ed style="display:none;position:fixed;inset:0;background:#000b;overflow:auto;padding:16px;z-index:50"><div class=card style="max-width:640px;margin:0 auto"><b>Edit soal</b><textarea id=f_q rows=3 placeholder="Pertanyaan (bisa pakai LaTeX $...$)"></textarea><select id=f_t><option value=pg>Pilihan ganda (A-D)</option><option value=bs>Benar / Salah</option></select><div id=eo><input id=f_a placeholder="Opsi A"><input id=f_b placeholder="Opsi B"><input id=f_c placeholder="Opsi C (boleh kosong)"><input id=f_d placeholder="Opsi D (boleh kosong)"></div><label class=m>Kunci jawaban</label><select id=f_k></select><div class=row><input id=f_s type=number placeholder="Detik"><input id=f_p type=number placeholder="Poin"></div><input id=f_g placeholder="Gambar (opsional)"><textarea id=f_x rows=2 placeholder="Penjelasan"></textarea><div class=row><button id=es>Simpan</button><button class=s id=ec>Batal</button></div></div></div>`;
- $('lay').href=url()+'#layar';
+ $('lay').outerHTML=`<a id=lay target=_blank href="${url()}#layar" style="color:var(--a);margin-right:16px">📺 Layar Proyektor (Kuis)</a><a target=_blank href="${url()}#pantau" style="color:#67E8F9;font-weight:700">🎥 Pantau Dunia 3D (Drone Live)</a>`;
  const f=i=>$('f_'+i),keys=t=>t=='bs'?[['A','Benar'],['B','Salah']]:[['A','A'],['B','B'],['C','C'],['D','D']];
  const fillK=(t,v)=>{f('k').innerHTML=keys(t).map(x=>`<option value=${x[0]}>${x[1]}</option>`).join('');f('k').value=v;$('eo').style.display=t=='bs'?'none':'block'};
  const row=x=>[x.q,x.o[0],x.o[1],x.o[2],x.o[3],x.k,x.d,x.p,x.x,x.g,x.t];
@@ -266,7 +266,6 @@ function dash(A){$('app').className='wide';let Q=[],AN=null;const go=async(a,d)=
  $('an').onclick=async()=>{try{AN=await A('a_analisis');$('ax').innerHTML='<table><tr><th>No</th><th>Soal</th><th>Kunci</th><th>Dijawab</th><th>% benar</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Pengecoh</th></tr>'+AN.rows.map(r=>`<tr><td>${r[0]}</td><td>${esc(String(r[1]).slice(0,60))}</td><td>${r[2]}</td><td>${r[3]}</td><td><b>${r[4]}%</b></td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[9]}</td></tr>`).join('')+'</table>';renderTex($('ax'))}catch(e){err(e)}};
  $('anl').onclick=async()=>{if(!AN)await $('an').onclick();if(AN)dlf('analisis-soal.csv',toCsv([['No','Soal','Kunci','Dijawab','Persen benar','A','B','C','D','Pengecoh'],...AN.rows]))};
  $('st').onclick=()=>go('a_start',{mode:$('md').value});
- $('lay').outerHTML=`<a id=lay target=_blank href="${url()}#layar" style="color:var(--a);margin-right:16px">📺 Layar Proyektor (Kuis)</a><a target=_blank href="${url()}#pantau" style="color:#67E8F9;font-weight:700">🎥 Pantau Dunia 3D (Drone Live)</a>`;
 
  $('plist-box').onclick=async e=>{
    const b=e.target.closest('button[data-kick]');if(!b)return;
@@ -317,10 +316,11 @@ function lay(A){$('app').className='wide';document.body.style.fontSize='22px';co
  else if(c){const res=s.phase=='result',t=c.st;h=`<div class=row><span class=m>Soal ${c.no} dari ${j.total}</span>${res?'':'<span class=big id=pt style="margin-left:auto;font-size:40px"></span>'}</div><div class=card><div class=big style="font-size:34px">${esc(c.q)}</div>${gimg(c.g,340)}</div><div class=opts>${c.o.map((o,x)=>o?`<div class="o o${x}" style="font-size:28px;${res&&L[x]!=c.k?'opacity:.4;':''}${res&&L[x]==c.k?'outline:6px solid #fff;':''}"><b>${L[x]}</b><span style="flex:1">${esc(o)}</span>${res?`<span>${t[L[x]]||0}</span>`:''}</div>`:'').join('')}</div>${res?`<p class=big>${t.benar} benar · ${t.salah} salah</p><p class=m>${esc(c.x)}</p>`:`<p class=m>${j.jawab} dari ${j.peserta} sudah menjawab</p>`}`}
  target.innerHTML=h;renderTex(target)}catch(e){}};poll();T=setInterval(poll,2000);tick()}
 
-function route(){stop();document.body.style.fontSize='';$('app').className='';const h=location.hash;if(h=='#guru'){hide3D();target=$('app');gate(dash)}else if(h=='#layar'){hide3D();target=$('app');gate(lay)}else{hide3D();home()}}
+function route(){stop();document.body.style.fontSize='';$('app').className='';const h=location.hash;if(h=='#guru'){hide3D();target=$('app');gate(dash)}else if(h=='#layar'){hide3D();target=$('app');gate(lay)}else if(h=='#pantau'){hide3D();target=$('app');gate(window.startSpectator)}else{hide3D();home()}}
 window.onhashchange=route;route();
 </script>
 <script src="dunia.js"></script>
 <script src="arena.js"></script>
+<script src="pantau.js"></script>
 </body>
 </html>
