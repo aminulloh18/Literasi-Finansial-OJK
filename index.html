@@ -280,10 +280,10 @@ function dash(A){$('app').className='wide';let Q=[],AN=null;const go=async(a,d)=
   const k=s.sesi+s.phase+s.qi+j.total+s.mode;
   if($('ctl').dataset.k!=k){$('ctl').dataset.k=k;const last=s.qi+1>=j.total;
    if(s.sesi&&s.mode=='live'){
-     $('ctl').innerHTML=`<button id=nx>${last?'Selesai: klasemen akhir':'Buka soal '+(s.qi+2)}</button><button class=s id=ex>+10 detik</button><button class=s id=cl>Tutup soal</button><button class=s id=bd>Klasemen</button><button class=d id=fin>🏁 Selesaikan Ujian</button>`;
+     $('ctl').innerHTML=`<button id=nx>${last?'Selesai: klasemen akhir':'Buka soal '+(s.qi+2)}</button>${s.phase=='question'?'<button class=d id=cl>⏹️ Tutup Soal Sekarang</button>':''}<button class=s id=ex>+10 detik</button><button class=s id=bd>Klasemen</button><button class=s id=fin>🏁 Selesaikan Ujian</button>`;
      $('nx').onclick=()=>last?go('a_phase',{phase:'end'}):go('a_open',{i:s.qi+1});
      $('ex').onclick=()=>go('a_extend');
-     $('cl').onclick=()=>go('a_phase',{phase:'result'});
+     if($('cl'))$('cl').onclick=()=>go('a_phase',{phase:'result'});
      $('bd').onclick=()=>go('a_phase',{phase:'board'});
      $('fin').onclick=()=>{if(confirm('Selesaikan ujian sekarang dan tampilkan Klasemen Akhir ke semua siswa?'))go('a_phase',{phase:'end'})};
    }else if(s.sesi){
@@ -294,7 +294,7 @@ function dash(A){$('app').className='wide';let Q=[],AN=null;const go=async(a,d)=
    }
   }
 
-  let h='';if(s.sesi&&s.mode=='live'){if(c&&(s.phase=='question'||s.phase=='result'))h+=`<div class=card style="margin:0 0 8px"><div class=row><span class=m>Soal ${c.no}</span>${s.phase=='question'?'<b id=pt style="margin-left:auto"></b>':''}</div><div class=big>${esc(c.q)}</div>${gimg(c.g,160)}${bars(c,c.st)}<p class=m>${j.jawab} dari ${j.peserta} siswa sudah menjawab</p></div>`;
+  let h='';if(s.sesi&&s.mode=='live'){if(c&&(s.phase=='question'||s.phase=='result'))h+=`<div class=card style="margin:0 0 8px"><div class=row><span class=m>Soal ${c.no}</span>${s.phase=='question'?'<b id=pt style="margin-left:auto"></b>':''}</div><div class=big>${esc(c.q)}</div>${gimg(c.g,160)}${bars(c,c.st)}<p class=m>${s.game&&s.phase=='question'?`🏝️ <b>${j.ready||0} dari ${j.peserta}</b> siswa sudah berdiri di pulau pilihan (klik <b>Tutup Soal Sekarang</b> jika sudah siap)`:`${j.jawab} dari ${j.peserta} siswa sudah menjawab`}</p></div>`;
    if(j.nxt)h+=`<div class=card style="margin:0"><div class=m>Berikutnya: soal ${j.nxt.no}</div>${esc(j.nxt.q)}</div>`}
   $('pv').innerHTML=h;renderTex($('pv'));
 
