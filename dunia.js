@@ -245,6 +245,7 @@ function closeQ(){$('quiz-modal').style.display='none';if(activeBox){activeBox.a
 function openUI(){gameActive=false;for(const k in keys)keys[k]=false;joy.x=joy.y=0;$('quiz-modal').style.display='flex';target=$('quiz-modal-content')}
 mandiri=async function(tp){tp=tp||'umum';stop();openUI();target.innerHTML='<div class="card"><div class="big">Mengambil soal...</div></div>';
  try{const j=await api('qt',{pid:S.pid,tp});$('flee-btn').style.display='block';
+  if(j.ended){closeQ();hide3D();target=$('app');return board(true)}   
   if(j.done){target.innerHTML=`<div class=card><div class=big>${j.n?'Semua soal di sini sudah kamu jawab 🎉':'Belum ada soal di sini. Tunggu guru mengisinya.'}</div></div>`;if(tp=='umum'&&activeBox){activeBox.active=false;scene.remove(activeBox.mesh);activeBox=null}return}
   off=j.now-Date.now();
   qView(j.q,j.dur,j.t0,S.total,async l=>{$('flee-btn').style.display='none';let r;
