@@ -70,6 +70,7 @@ function hud(h,keep){
   if(!e)return;
   e.style.display='block';
   e.innerHTML='<div class="card" style="margin:0;background:#0F172Ae6;border:1px solid #22D3EE88">'+h+'</div>';
+   if(window.renderTex)renderTex(e);
   if(!keep)lastHud=h;
 }
 
