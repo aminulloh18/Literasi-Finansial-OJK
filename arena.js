@@ -70,7 +70,7 @@ function hud(h,keep){
   if(!e)return;
   e.style.display='block';
   e.innerHTML='<div class="card" style="margin:0;background:#0F172Ae6;border:1px solid #22D3EE88">'+h+'</div>';
-   if(window.renderTex)renderTex(e);
+  if(window.renderTex)renderTex(e);
   if(!keep)lastHud=h;
 }
 
@@ -95,7 +95,16 @@ function updateElimHud(){
 }
 
 /* ---- Lantai melayang ---- */
+function cleanCanvasTex(s){
+  return String(s).replace(/\$/g,'')
+    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g,'($1)/($2)')
+    .replace(/\\sqrt\{([^}]+)\}/g,'√($1)')
+    .replace(/\\times/g,'×').replace(/\\div/g,'÷')
+    .replace(/\\pi/g,'π').replace(/\\le/g,'≤').replace(/\\ge/g,'≥')
+    .replace(/[{}]/g,'');
+}
 function floorTex(L,tx,col,big){
+  tx=cleanCanvasTex(tx);
   const c=document.createElement('canvas');c.width=c.height=512;
   const g=c.getContext('2d');
   g.fillStyle='#'+col.toString(16).padStart(6,'0');g.fillRect(0,0,512,512);
@@ -116,7 +125,14 @@ function floorTex(L,tx,col,big){
   }
   return new THREE.CanvasTexture(c);
 }
-
+function cleanCanvasTex(s){
+  return String(s).replace(/\$/g,'')
+    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g,'($1)/($2)')
+    .replace(/\\sqrt\{([^}]+)\}/g,'√($1)')
+    .replace(/\\times/g,'×').replace(/\\div/g,'÷')
+    .replace(/\\pi/g,'π').replace(/\\le/g,'≤').replace(/\\ge/g,'≥')
+    .replace(/[{}]/g,'');
+}
 function clear(){plats.forEach(q=>scene.remove(q.g));plats.length=0;}
 function build(o,rawGame){
   clear();
