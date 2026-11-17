@@ -1,11 +1,18 @@
-/* arena.js - Gerbang Arena + Sistem Eliminasi (Last Standing) + Dashboard Guru Modern
+/* arena.js - Gerbang Arena + Pilihan Mode (Eliminasi / Bebas Naik Lagi) + Dashboard Guru Modern
    Pasang setelah dunia.js: <script src="dunia.js"></script> <script src="arena.js"></script> */
 (function(){
 const $=id=>document.getElementById(id),AY=40,COL={A:0x2563EB,B:0xD97706,C:0x7C3AED,D:0x059669};
 const GAMES=[{id:'pulau',n:'PULAU MELAYANG',x:-18,z:14},{id:'dua',n:'DUA LANTAI',x:18,z:14}];
 let GS={},on=false,lk='',rEnd=0,sent=false,vy=0,landT=0,tmr=null,lastHud='',arT=null;
-let elim=false,enteredGame='',spec=false,lastElimNo=0;
+let elim=false,enteredGame='',spec=false,lastElimNo=0,guruRule='elim';
 const plats=[],gates=[];
+
+// Helper memisahkan jenis game ('pulau'/'dua') dan aturan ('elim'/'bebas')
+const parseGame=raw=>{
+  if(!raw)return{id:'',rule:'elim'};
+  const p=String(raw).split(':');
+  return{id:p[0],rule:p[1]||'elim'};
+};
 
 /* ---- Teruskan state live ke arena ---- */
 const _api=api;
@@ -19,25 +26,26 @@ lview=function(j){if(j.game)return;_lv(j)};
 
 function onState(j){
   GS=j;
+  const gInfo=parseGame(j.game);
   if(j.phase==='question'&&j.dur)rEnd=j.openAt+j.dur*1000;
   const k=j.phase+j.qi+(j.game||'');
   if(k===lk)return;
   lk=k;
 
-  // Reset status eliminasi jika guru menutup gerbang atau ganti jenis arena baru
-  if(!j.game){
-    elim=false;enteredGame='';spec=false;
-    if(on)exit();
+  // Reset status eliminasi jika gerbang ditutup, game berganti, atau aturan diubah ke 'bebas'
+  if(!gInfo.id || gInfo.rule==='bebas'){
+    elim=false;
+    if(!gInfo.id){enteredGame='';spec=false;if(on)exit();}
     updateElimHud();
-    return;
+    if(!gInfo.id)return;
   }
-  if(enteredGame && enteredGame!==j.game){
-    elim=false;spec=false;
+  if(enteredGame && enteredGame!==gInfo.id){
+    elim=false;spec=false;updateElimHud();
   }
 
   if(j.phase==='board'||j.phase==='end'){
     if(on)exit();
-    spec=false;
+    spec=false;updateElimHud();
     showBoard(j.phase==='end');
     return;
   }
@@ -76,7 +84,7 @@ function updateElimHud(){
     $('hud').insertAdjacentHTML('beforeend','<div class="pill" id="elim-pill" style="background:#7F1D1Ddd;border-color:#F43F5E;color:#FECACA;cursor:pointer"></div>');
     b=$('elim-pill');
     b.onclick=()=>{
-      if(!GS.game)return;
+      if(!parseGame(GS.game).id)return;
       spec=!spec;
       if(spec)camOn();else camOff();
       updateElimHud();
@@ -109,8 +117,9 @@ function floorTex(L,tx,col,big){
 }
 
 function clear(){plats.forEach(q=>scene.remove(q.g));plats.length=0;}
-function build(o,game){
+function build(o,rawGame){
   clear();
+  const game=parseGame(rawGame).id;
   const two=game==='dua'||o.filter(Boolean).length<=2;
   const ix=[0,1,2,3].filter(i=>o[i]).slice(0,two?2:4);
   const sp=two?[[-12,0],[12,0]]:[[-10,-10],[10,-10],[-10,10],[10,10]];
@@ -131,7 +140,8 @@ const over=p=>plats.find(q=>Math.abs(p.x-q.x)<=q.sx/2&&Math.abs(p.z-q.z)<=q.sz/2
 const under=()=>{const p=player.group.position,q=over(p);return q&&!q.fall&&p.y>=AY-1.5?q:null;};
 
 function lobby(){
-  hud('<div class="big">Kamu sudah di dalam gerbang 🎉</div><div class="m">⚠️ Sistem Gugur: sekali salah pijakan langsung tereliminasi ke desa!</div>');
+  const isElim=parseGame(GS.game).rule==='elim';
+  hud(`<div class="big">Kamu sudah di dalam gerbang 🎉</div><div class="m">${isElim?'⚠️ <b>Mode Eliminasi:</b> sekali salah pijakan langsung gugur ke desa!':'🔄 <b>Mode Bebas:</b> jika jatuh ke desa, kamu bisa masuk gerbang lagi untuk soal berikutnya.'}</div>`);
 }
 
 function start(j){
@@ -150,7 +160,7 @@ function start(j){
 
 function end(j){
   clearInterval(tmr);
-  const r=j.res,ok=r.j===r.k;
+  const r=j.res,ok=r.j===r.k,isElim=parseGame(GS.game).rule==='elim';
   plats.forEach(q=>{if(q.letter!==r.k){q.fall=true;q.v=0;}});
   const rm=window.__rem||{};
   for(const id in rm){
@@ -163,16 +173,17 @@ function end(j){
 
   if(ok){
     hud(`<div class="big" style="color:var(--g)">✅ Bertahan! +${r.poin} poin</div><div>Jawaban benar: <b>${r.k}</b> · Siap-siap soal berikutnya!</div><div class="m">${esc2(r.x||'')}</div>`);
-  }else{
-    // SALAH / TIDAK DI LANTAI = TERELIMINASI!
+  }else if(isElim){
     elim=true;
     lastElimNo=(GS.qi||0)+1;
     hud(`<div class="big" style="color:var(--r)">💀 TERELIMINASI!</div><div>Jawaban benar: <b>${r.k}</b> · Kamu jatuh kembali ke desa & tidak bisa masuk gerbang lagi.</div><div class="m">${esc2(r.x||'')}</div>`);
     clearTimeout(landT);
-    landT=setTimeout(()=>{
-      exit();
-      updateElimHud();
-    },3200);
+    landT=setTimeout(()=>{exit();updateElimHud();},3200);
+  }else{
+    // Mode Bebas: jatuh ke desa, keluar arena sementara, dan boleh masuk gerbang lagi untuk soal berikutnya!
+    hud(`<div class="big" style="color:var(--r)">💦 Jatuh ke Desa!</div><div>Jawaban benar: <b>${r.k}</b> · Lari masuk ke gerbang lagi untuk ikut soal berikutnya!</div><div class="m">${esc2(r.x||'')}</div>`);
+    clearTimeout(landT);
+    landT=setTimeout(()=>{exit();},3200);
   }
 }
 
@@ -204,12 +215,21 @@ updateCamera=function(){
 };
 
 async function enter(){
-  if(on || elim)return;
-  on=true;enteredGame=GS.game;camOn();lk='';vy=0;
+  const gInfo=parseGame(GS.game);
+  if(on || !gInfo.id || (elim && gInfo.rule==='elim'))return;
+  on=true;enteredGame=gInfo.id;camOn();lk='';vy=0;
   try{await api('arena_in',{pid:S.pid});}catch(e){}
   player.group.position.set(0,AY+.1,0);
-  build(GS.game==='dua'?['Benar','Salah','','']:['Pilihan A','Pilihan B','Pilihan C','Pilihan D'],GS.game);
-  lobby();onState(GS);
+  build(gInfo.id==='dua'?['Benar','Salah','','']:['Pilihan A','Pilihan B','Pilihan C','Pilihan D'],GS.game);
+
+  // Jika siswa masuk di tengah sesi saat soal sedang berjalan atau hasil ditampilkan, langsung sinkronkan ke fase tersebut!
+  if(GS.phase==='question'){
+    start(GS);
+  }else if(GS.phase==='result'){
+    hud('<div class="big">⏳ Menunggu Soal Berikutnya...</div><div class="m">Soal sebelumnya baru saja selesai. Bersiap di atas pulau!</div>');
+  }else{
+    lobby();
+  }
 }
 
 function exit(){
@@ -246,11 +266,11 @@ function loop(){
   requestAnimationFrame(loop);
   if(typeof scene==='undefined'||!scene||!player||!gates.length)return;
   const t=performance.now()/1000,p=player.group.position;
+  const gInfo=parseGame(GS.game);
 
   gates.forEach(G=>{
-    const op=GS.game===G.id;
-    // Kalau siswa sudah tereliminasi, gerbang berwarna merah redup & tidak bisa dimasuki lagi
-    if(op && elim){
+    const op=gInfo.id===G.id;
+    if(op && elim && gInfo.rule==='elim'){
       G.p.material.color.set(0xF43F5E);
       G.p.material.opacity=0.22;
     }else{
@@ -259,7 +279,7 @@ function loop(){
     }
 
     if(op&&!on&&gameActive&&!inMenu&&S.mode==='live'&&p.distanceTo(G.pos)<3.5){
-      if(elim){
+      if(elim && gInfo.rule==='elim'){
         hud('<div class="big" style="color:var(--r)">🔒 Gerbang Terkunci!</div><div class="m">Kamu sudah tereliminasi pada ronde ini. Silakan berkeliling desa atau klik <b>Intip Arena</b> di pojok kiri atas.</div>',1);
         clearTimeout(landT);
         landT=setTimeout(()=>{if(!on&&$('ahud'))$('ahud').style.display='none';},2500);
@@ -283,13 +303,18 @@ function loop(){
     vy+=.03;p.y=Math.max(0,p.y-vy);
     if(p.y===0){
       vy=0;
-      // Kalau jatuh sebelum soal berakhir (terpleset), langsung tereliminasi!
       if(GS.phase==='question' || GS.phase==='result'){
-        elim=true;
-        lastElimNo=(GS.qi||0)+1;
-        hud('<div class="big" style="color:var(--r)">💦 Terjatuh ke Desa · TERELIMINASI!</div><div class="m">Kamu keluar dari arena dan tidak bisa naik lagi.</div>',1);
-        clearTimeout(landT);
-        landT=setTimeout(()=>{exit();updateElimHud();},2200);
+        if(gInfo.rule==='elim'){
+          elim=true;
+          lastElimNo=(GS.qi||0)+1;
+          hud('<div class="big" style="color:var(--r)">💦 Terjatuh ke Desa · TERELIMINASI!</div><div class="m">Kamu keluar dari arena dan tidak bisa naik lagi.</div>',1);
+          clearTimeout(landT);
+          landT=setTimeout(()=>{exit();updateElimHud();},2200);
+        }else{
+          hud('<div class="big" style="color:var(--r)">💦 Terjatuh ke Desa!</div><div class="m">Masuk ke gerbang lagi untuk ikut soal berikutnya.</div>',1);
+          clearTimeout(landT);
+          landT=setTimeout(()=>{exit();},2200);
+        }
       }else{
         hud('<div class="big">💦 Terpeleset saat lobi! Kembali ke atas...</div>',1);
         clearTimeout(landT);
@@ -299,7 +324,7 @@ function loop(){
   }
 }
 
-/* ---- Dashboard Guru Modern & Kartu Pilihan Arena ---- */
+/* ---- Dashboard Guru Modern & Pilihan Mode Eliminasi / Bebas ---- */
 function inject(){
   const ctl=$('ctl');
   if(!ctl||$('ar-card'))return;
@@ -312,11 +337,15 @@ function inject(){
   c.style.gridColumn='1/-1';
   c.style.borderLeftColor='#06B6D4';
   c.innerHTML=`
-    <div class="row" style="justify-content:space-between;margin-bottom:6px">
-      <b style="font-size:18px;color:#67E8F9">🎮 Arena Permainan (Sistem Gugur · Mode Serentak)</b>
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <b style="font-size:18px;color:#67E8F9">🎮 Arena Permainan (Mode Serentak)</b>
       <span id="ar-badge" style="background:#06B6D422;color:#67E8F9;border:1px solid #06B6D455;padding:3px 12px;border-radius:99px;font-size:12px;font-weight:700">GERBANG TERTUTUP</span>
     </div>
-    <p class="m" style="margin:0 0 12px">Pilih wahana untuk membuka gerbang portal di desa. Siswa yang salah menjawab akan jatuh & <b>tereliminasi</b> (kembali berjalan-jalan di desa).</p>
+    <div class="row" style="background:#0B1120;padding:10px 12px;border-radius:12px;border:1px solid #334155;margin-bottom:10px">
+      <span class="m" style="flex:1"><b>Aturan jika siswa jatuh / salah:</b></span>
+      <button id="r-elim" style="padding:8px 12px;font-size:14px" data-rule="elim">💀 Eliminasi (Gugur)</button>
+      <button id="r-bebas" class="s" style="padding:8px 12px;font-size:14px" data-rule="bebas">🔄 Bebas (Bisa Naik Lagi)</button>
+    </div>
     <div class="row" style="margin:10px 0">
       <button id="g-pulau" class="s" data-g="pulau">🏝️ Pulau Melayang (A-D)</button>
       <button id="g-dua" class="s" data-g="dua">🏢 Dua Lantai (Benar/Salah)</button>
@@ -326,10 +355,29 @@ function inject(){
   `;
   card.parentNode.insertBefore(c,card);
 
+  let activeGameId='';
+  const syncRuleBtns=()=>{
+    if($('r-elim'))$('r-elim').className=guruRule==='elim'?'':'s';
+    if($('r-bebas'))$('r-bebas').className=guruRule==='bebas'?'':'s';
+  };
+  syncRuleBtns();
+
   c.onclick=async e=>{
     const b=e.target.closest('button');
     if(!b)return;
-    try{await api('a_game',{pin:sessionStorage.pin,game:b.dataset.g});}catch(x){alert(x.message||x);}
+    try{
+      if(b.dataset.rule){
+        guruRule=b.dataset.rule;
+        syncRuleBtns();
+        if(activeGameId){
+          await api('a_game',{pin:sessionStorage.pin,game:`${activeGameId}:${guruRule}`});
+        }
+        return;
+      }
+      const g=b.dataset.g;
+      activeGameId=g;
+      await api('a_game',{pin:sessionStorage.pin,game:g?`${g}:${guruRule}`:''});
+    }catch(x){alert(x.message||x);}
   };
 
   clearInterval(arT);
@@ -337,19 +385,21 @@ function inject(){
     if(!$('ar-st'))return clearInterval(arT);
     try{
       const j=await api('a_info',{pin:sessionStorage.pin});
-      const g=j.st.game;
-      if($('g-pulau'))$('g-pulau').style.outline=g==='pulau'?'3px solid #22D3EE':'none';
-      if($('g-dua'))$('g-dua').style.outline=g==='dua'?'3px solid #22D3EE':'none';
+      const info=parseGame(j.st.game);
+      activeGameId=info.id;
+      if(info.id){guruRule=info.rule;syncRuleBtns();}
+      if($('g-pulau'))$('g-pulau').style.outline=info.id==='pulau'?'3px solid #22D3EE':'none';
+      if($('g-dua'))$('g-dua').style.outline=info.id==='dua'?'3px solid #22D3EE':'none';
       if($('ar-badge')){
-        $('ar-badge').textContent=g?(g==='pulau'?'🟢 PULAU MELAYANG AKTIF':'🟢 DUA LANTAI AKTIF'):'🔴 GERBANG TERTUTUP';
-        $('ar-badge').style.color=g?'#6EE7B7':'#FDA4AF';
-        $('ar-badge').style.borderColor=g?'#10B98166':'#F43F5E66';
+        $('ar-badge').textContent=info.id?`🟢 ${info.id==='pulau'?'PULAU MELAYANG':'DUA LANTAI'} (${info.rule==='elim'?'ELIMINASI':'BEBAS'})`:'🔴 GERBANG TERTUTUP';
+        $('ar-badge').style.color=info.id?'#6EE7B7':'#FDA4AF';
+        $('ar-badge').style.borderColor=info.id?'#10B98166':'#F43F5E66';
       }
       $('ar-st').innerHTML=j.st.mode!=='live'
         ?'⚠️ Ubah mode sesi menjadi <b>Serentak</b> di atas agar gerbang arena dapat dibuka.'
-        :g
-          ?`🚪 Gerbang <b>${g==='pulau'?'Pulau Melayang (4 Pulau)':'Dua Lantai (Benar/Salah)'}</b> TERBUKA · <b>${j.ain||0}</b> dari <b>${j.peserta}</b> siswa sudah masuk arena. Tekan <b>Buka Soal 1</b> saat siap!`
-          :'Gerbang tertutup (kuis layar biasa). Klik salah satu wahana di atas untuk mengundang siswa masuk arena.';
+        :info.id
+          ?`🚪 Gerbang <b>${info.id==='pulau'?'Pulau Melayang':'Dua Lantai'}</b> TERBUKA · Aturan: <b>${info.rule==='elim'?'💀 Eliminasi (Sekali Gugur)':'🔄 Bebas (Boleh masuk gerbang lagi untuk soal berikutnya)'}</b> · <b>${j.ain||0}</b>/${j.peserta} siswa masuk.`
+          :'Gerbang tertutup (kuis layar biasa). Pilih aturan & wahana di atas untuk membuka gerbang.';
     }catch(e){}
   },2500);
 }
@@ -365,8 +415,6 @@ st.textContent=`
   #ahud .card{padding:10px 14px!important;max-height:28vh;overflow:auto;background:#0F172Ae6!important;backdrop-filter:blur(8px)}
   #ahud .big{font-size:17px}
   #ahud.min .qt{display:none}
-
-  /* Tampilan Dashboard Guru Lebih Modern & Rapi */
   #app.wide:has(#ctl){max-width:1160px!important;gap:16px 22px!important;padding-top:24px}
   #app.wide:has(#ctl) .card{
     background:linear-gradient(155deg,#1E293Bf5,#0F172Af5)!important;
