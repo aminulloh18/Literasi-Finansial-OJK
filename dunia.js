@@ -292,4 +292,5 @@ function dunia(){if(window.__dn)return;window.__dn=1;
 }
 const _sg=window.startGame;window.startGame=function(){_sg();$('hud').style.display='flex';if(S.mode==='live')$('hud-lb').style.display='none';if(!syncOn){syncOn=true;sync()}};
 const _i=init3D;init3D=function(){_i();dunia()};if(typeof scene!=='undefined'&&scene)dunia();
+window.__duniaKit={buildRoadsAndAlunAlun,buildTown,spawnVeh,spawnAn,build,trees,veh,an,beac,rem,applyRem};
 })();
