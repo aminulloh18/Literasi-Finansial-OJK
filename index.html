@@ -316,7 +316,7 @@ function lay(A){$('app').className='wide';document.body.style.fontSize='22px';co
  else if(c){const res=s.phase=='result',t=c.st;h=`<div class=row><span class=m>Soal ${c.no} dari ${j.total}</span>${res?'':'<span class=big id=pt style="margin-left:auto;font-size:40px"></span>'}</div><div class=card><div class=big style="font-size:34px">${esc(c.q)}</div>${gimg(c.g,340)}</div><div class=opts>${c.o.map((o,x)=>o?`<div class="o o${x}" style="font-size:28px;${res&&L[x]!=c.k?'opacity:.4;':''}${res&&L[x]==c.k?'outline:6px solid #fff;':''}"><b>${L[x]}</b><span style="flex:1">${esc(o)}</span>${res?`<span>${t[L[x]]||0}</span>`:''}</div>`:'').join('')}</div>${res?`<p class=big>${t.benar} benar · ${t.salah} salah</p><p class=m>${esc(c.x)}</p>`:`<p class=m>${j.jawab} dari ${j.peserta} sudah menjawab</p>`}`}
  target.innerHTML=h;renderTex(target)}catch(e){}};poll();T=setInterval(poll,2000);tick()}
 
-function route(){stop();document.body.style.fontSize='';$('app').className='';const h=location.hash;if(h=='#guru'){hide3D();target=$('app');gate(dash)}else if(h=='#layar'){hide3D();target=$('app');gate(lay)}else if(h=='#pantau'){hide3D();target=$('app');gate(window.startSpectator)}else{hide3D();home()}}
+function route(){stop();document.body.style.fontSize='';$('app').className='';const h=location.hash;if(h=='#guru'){hide3D();target=$('app');gate(dash)}else if(h=='#layar'){hide3D();target=$('app');gate(lay)}else if(h=='#pantau'){hide3D();target=$('app');gate(A=>window.startSpectator(A))}else{hide3D();home()}}
 </script>
 <script src="dunia.js"></script>
 <script src="arena.js"></script>
