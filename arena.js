@@ -163,18 +163,26 @@ function lobby(){
 
 function start(j){
   clearInterval(tmr);sent=false;build(j.q.o,j.game);
+  let lastPick='';
   hud(`<div class="m">Soal ${j.q.no}/${j.total} · ketuk kotak ini untuk sembunyikan soal</div><div class="big qt">${esc2(j.q.q)}</div><div class="big" id="at"></div>`);
   tmr=setInterval(()=>{
-    const l=Math.ceil((rEnd-(Date.now()+off))/1000),e=$('at');
-    if(e)e.textContent='⏱ '+Math.max(0,l)+' dtk';
-    if(l<=0&&!sent){
+    const u=under();
+    const curPick=u?u.letter:'-';
+    // Setiap kali siswa pindah pulau, langsung titip ke RAM server (0 antrean!)
+    if(curPick!==lastPick){
+      lastPick=curPick;
+      api('pick',{pid:S.pid,j:curPick}).catch(()=>{});
+    }
+    const remMs=rEnd-(Date.now()+off);
+    const l=Math.ceil(remMs/1000),e=$('at');
+    if(e)e.textContent='⏱ '+Math.max(0,l)+' dtk'+(curPick!=='-'?' · Posisi: '+curPick:'');
+    if(remMs<=500&&!sent){
       sent=true;clearInterval(tmr);
-      const q=under();
-      api('ans',{pid:S.pid,j:q?q.letter:'-'}).catch(()=>{});
+      api('ans',{pid:S.pid,j:curPick}).catch(()=>{});
     }
   },200);
 }
-
+   
 function end(j){
   clearInterval(tmr);
   const r=j.res,ok=r.j===r.k,isElim=parseGame(GS.game).rule==='elim';
